@@ -51,17 +51,26 @@ const pool = genericPool.createPool(
     // presents as random request timeouts, not an obvious crash. Raise via BROWSER_POOL_MAX
     // once you've confirmed the host has the RAM to spare (e.g. 3 on a 1GB+ plan).
     max: parseInt(process.env.BROWSER_POOL_MAX, 10) || 1,
-    min: 0,                      // Don't keep idle browsers
-    // With max capped at 1, there's only ever one browser to pay for — worth keeping it
-    // around longer to absorb back-to-back downloads (resume PDF, then cover letter PDF)
-    // without a repeat cold start.
+    // Cold-launching Chromium on a free-tier shared-CPU host can take well over the request's
+    // own timeout budget, so per-request launches were never going to be reliable there. min: 1
+    // launches the one allowed browser once, in the background, as soon as this module loads
+    // (generic-pool's autostart) — not blocking Express from listening — and keeps it alive
+    // forever instead of tearing it down between requests. Every request after that just
+    // borrows the already-running instance.
+    min: parseInt(process.env.BROWSER_POOL_MIN, 10) || 1,
     idleTimeoutMillis: 90000,
-    // Cold-launching Chromium on a shared-CPU container host (Render free/starter tier)
-    // regularly takes well over 15s, especially right after the pool sits idle and every
-    // browser was reaped. 15s was tight enough to fail on a normal cold start.
-    acquireTimeoutMillis: 25000,
+    // Safety margin in case the pool's one browser dies (crash/OOM) and has to relaunch
+    // mid-request instead of being handed out already-warm.
+    acquireTimeoutMillis: 40000,
     testOnBorrow: true           // Validate browser before returning from pool
   }
 );
+
+// The min:1 warmup launch happens outside any request, so a failure here (e.g. missing
+// system libs for Chromium on this host) would otherwise disappear silently instead of
+// showing up as the "ResourceRequest timed out" a user sees later.
+pool.on('factoryCreateError', (err) => {
+  console.error('[BrowserPool] Background browser launch failed:', err.message);
+});
 
 module.exports = pool;
