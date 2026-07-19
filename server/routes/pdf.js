@@ -99,18 +99,16 @@ router.post('/', async (req, res) => {
       console.log('[PDF-API] PDF sent to client successfully');
     } catch (generationError) {
       console.error('[PDF-API] PDF generation error:', generationError.message);
-      const isDev = process.env.NODE_ENV !== 'production';
       return res.status(500).json({
         error: 'PDF generation failed. Please try again later.',
-        ...(isDev && { message: generationError.message })
+        message: generationError.message
       });
     }
   } catch (error) {
     console.error('[PDF-API] Unexpected error:', error);
-    const isDev = process.env.NODE_ENV !== 'production';
     res.status(500).json({
       error: 'Internal server error',
-      ...(isDev && { message: error.message })
+      message: error.message
     });
   }
 });
