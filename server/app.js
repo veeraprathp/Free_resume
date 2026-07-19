@@ -74,7 +74,9 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes with authentication, rate limiters, and timeouts
-app.use('/api/pdf', appTokenAuth, pdfLimiter, requestTimeout(30000), pdfRouter);
+// 45s: must exceed browserPool's acquireTimeoutMillis (25s cold-start budget) plus
+// headroom for setContent + page.pdf(), or this timeout fires before the pool's does.
+app.use('/api/pdf', appTokenAuth, pdfLimiter, requestTimeout(45000), pdfRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/resumes', appTokenAuth, generateLimiter, requestTimeout(120000), resumesRouter);
 app.use('/api/coverletters', appTokenAuth, generateLimiter, requestTimeout(120000), coverlettersRouter);
