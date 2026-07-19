@@ -11,6 +11,7 @@ const { enforceFactualIntegrity } = require('../utils/resume-integrity');
 const { renderResume } = require('../utils/resume-renderer');
 const { parseAIJson } = require('../utils/parseAIJson');
 const { extractText } = require('../utils/resumeTextExtract');
+const { aiErrorResponse } = require('../utils/aiErrorResponse');
 
 const ALLOWED_RESUME_MIMETYPES = new Set([
   'application/pdf',
@@ -92,9 +93,8 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('[RESUMES] Error:', error.message);
-    if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-      return res.status(401).json({ error: 'AI provider authentication failed. Check your API key.' });
-    }
+    const known = aiErrorResponse(error);
+    if (known) return res.status(known.status).json(known.body);
     const isDev = process.env.NODE_ENV !== 'production';
     res.status(500).json({ error: 'Resume generation failed', ...(isDev && { message: error.message }) });
   }
@@ -192,9 +192,8 @@ router.post('/test-key', async (req, res) => {
     res.json({ ok: true });
   } catch (error) {
     console.error('[RESUMES] Test key error:', error.message);
-    if (error.message.includes('401') || error.message.includes('Unauthorized') || error.message.includes('403')) {
-      return res.status(401).json({ ok: false, error: 'AI provider authentication failed. Check your API key.' });
-    }
+    const known = aiErrorResponse(error);
+    if (known) return res.status(known.status).json({ ok: false, ...known.body });
     const isDev = process.env.NODE_ENV !== 'production';
     res.status(500).json({ ok: false, error: 'Key validation failed', ...(isDev && { message: error.message }) });
   }
@@ -241,9 +240,8 @@ router.post('/parse', (req, res) => {
       res.json({ profile: normalizeProfile(parsedProfile) });
     } catch (error) {
       console.error('[RESUMES] Parse error:', error.message);
-      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-        return res.status(401).json({ error: 'AI provider authentication failed. Check your API key.' });
-      }
+      const known = aiErrorResponse(error);
+      if (known) return res.status(known.status).json(known.body);
       const isDev = process.env.NODE_ENV !== 'production';
       res.status(500).json({ error: 'Resume parsing failed', ...(isDev && { message: error.message }) });
     }

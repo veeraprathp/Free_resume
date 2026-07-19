@@ -5,6 +5,7 @@ const { buildCoverLetterPrompt } = require('../prompts/coverLetter');
 const { normalizeProfile } = require('../utils/profile-normalizer');
 const { renderCoverLetter } = require('../utils/coverletter-renderer');
 const { parseAIJson } = require('../utils/parseAIJson');
+const { aiErrorResponse } = require('../utils/aiErrorResponse');
 
 router.post('/', async (req, res) => {
   try {
@@ -37,9 +38,8 @@ router.post('/', async (req, res) => {
     res.json({ coverLetterContent });
   } catch (error) {
     console.error('[COVERLETTERS] Error:', error.message);
-    if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-      return res.status(401).json({ error: 'AI provider authentication failed. Check your API key.' });
-    }
+    const known = aiErrorResponse(error);
+    if (known) return res.status(known.status).json(known.body);
     const isDev = process.env.NODE_ENV !== 'production';
     res.status(500).json({ error: 'Cover letter generation failed', ...(isDev && { message: error.message }) });
   }
