@@ -17,6 +17,10 @@ const authRouter = require('./routes/auth');
 
 const app = express();
 
+// Render (and most PaaS hosts) terminate TLS at a reverse proxy in front of the app,
+// so req.ip / X-Forwarded-For must be trusted for rate limiting to key off the real client IP.
+app.set('trust proxy', 1);
+
 // Security middleware — CSP tuned for the static frontend served below:
 // inline config script, Google Fonts, direct browser calls to OpenRouter's
 // public model list and Supabase auth.
