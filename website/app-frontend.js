@@ -1,7 +1,8 @@
 const CONFIG = {
   BACKEND_URL: window.__APPLYJOB_API_URL__ || 'http://localhost:3000/api',
-  // Guided pipeline order: connect AI first so every later step just works
-  STEPS: ['settings', 'profile', 'job', 'generate'],
+  // AI connection now happens via the quick-connect modal (or the full
+  // settings modal, opened from the sidebar) rather than a wizard step.
+  STEPS: ['profile', 'job', 'generate'],
 };
 
 // Providers that run at a caller-supplied URL and therefore need the Base URL field
@@ -151,7 +152,6 @@ function goToStep(stepIndex) {
 // gives users a constant sense of progress (visible feedback loop)
 function updateNavCompletion() {
   const done = {
-    settings: !!(document.getElementById('apiKey')?.value && document.getElementById('aiModel')?.value),
     profile: !!document.getElementById('fullName')?.value,
     job: !!document.getElementById('jdText')?.value,
     generate: !!(appState.generatedResume || appState.generatedCoverLetter),
@@ -1423,7 +1423,7 @@ function useTemplateFromGallery(templateId) {
   localStorage.setItem('preferredResumeTemplateId', templateId);
   dismissWelcome();
   updateNavCompletion();
-  goToStep(0); // Connect AI — same entry point as every other landing path
+  goToStep(0); // Your Profile — AI is already connected via the quick-connect modal
 }
 
 function bindWelcomeChoice() {
@@ -1446,8 +1446,8 @@ function bindWelcomeChoice() {
 // Shown the moment the template gallery loads if no AI key is saved yet.
 // Writes straight into the real #aiProvider/#aiModel/#apiKey fields so every
 // existing function (collectSettings, testApiKey, generateResume...) just
-// works — this is a fast-path into the same settings the full "Connect AI"
-// step edits, not a separate parallel system.
+// works — this is a fast-path into the same settings the full AI settings
+// modal edits (see below), not a separate parallel system.
 
 function showAiConnectModal() {
   const modal = document.getElementById('aiConnectModal');
@@ -1495,6 +1495,31 @@ function bindAiConnectModal() {
     } finally {
       btn.disabled = false;
     }
+  });
+}
+
+// ===== FULL AI SETTINGS MODAL (all providers) =====
+// Opened from the sidebar's "Change AI provider" link — this is where a user
+// switches away from the quick-connect modal's OpenRouter/Groq-only choice to
+// any other provider. Writes into the same #aiProvider/#aiModel/#apiKey
+// fields as the quick-connect modal, so both stay in sync automatically.
+
+function showAiSettingsModal() {
+  const modal = document.getElementById('aiSettingsModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function hideAiSettingsModal() {
+  const modal = document.getElementById('aiSettingsModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function bindAiSettingsModal() {
+  document.getElementById('changeAiProviderBtn')?.addEventListener('click', showAiSettingsModal);
+  document.getElementById('closeAiSettingsBtn')?.addEventListener('click', () => {
+    persistProfileAndSettings();
+    refreshApiStatus();
+    hideAiSettingsModal();
   });
 }
 
@@ -1550,7 +1575,7 @@ function bindWelcome() {
   document.getElementById('welcomeSkip')?.addEventListener('click', (e) => {
     e.preventDefault();
     dismissWelcome();
-    goToStep(0); // Connect AI
+    goToStep(0); // Your Profile
   });
 
   document.getElementById('welcomeStartBtn')?.addEventListener('click', () => {
@@ -1572,17 +1597,13 @@ function bindWelcome() {
     updateNavCompletion();
 
     const settings = collectSettings();
+    goToStep(CONFIG.STEPS.indexOf('profile'));
     if (settings.apiKey && settings.model) {
-      goToStep(CONFIG.STEPS.indexOf('profile'));
       if (heroFile) parseResume(); // key already set: parse immediately, magic moment
     } else {
-      // One-time setup first; their file + JD are already carried over
-      goToStep(0);
-      const status = document.getElementById('settingsStatus');
-      if (status) {
-        status.textContent = 'One quick step: connect a free AI key, then your resume will be parsed automatically.';
-        status.className = 'success';
-      }
+      // Defensive fallback — the mandatory quick-connect modal should already
+      // have required a key before this button was reachable, but just in case.
+      showAiSettingsModal();
     }
   });
 }
@@ -1681,6 +1702,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindWelcome();
   bindAuthGate();
   bindAiConnectModal();
+  bindAiSettingsModal();
   bindPreviewEditing();
   initPreviewResizer();
   toggleCustomBaseURLSection();

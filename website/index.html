@@ -76,6 +76,68 @@
     </div>
   </div>
 
+  <!-- ===== FULL AI SETTINGS MODAL (all providers) =====
+       Opened from the sidebar's "Change AI provider" link. The quick-connect
+       modal below only offers OpenRouter/Groq (the truly-free options) — this
+       is where a user switches to OpenAI, Anthropic, a local Ollama endpoint,
+       etc. Both write into the same #aiProvider/#aiModel/#apiKey fields. -->
+  <div id="aiSettingsModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <h2 class="modal-title">Connect your AI</h2>
+      <p class="hint">ApplyJob never charges you and never sees your data on our servers — you plug in your own AI provider key, and it's stored only in this browser.</p>
+
+      <div class="form-section">
+        <h2>Provider</h2>
+        <select id="aiProvider" class="form-input">
+          <option value="openai">OpenAI (GPT-4o, o1)</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="deepseek">DeepSeek (V3, R1)</option>
+          <option value="openrouter">OpenRouter (400+ models)</option>
+          <option value="groq">Groq (Llama, Mixtral)</option>
+          <option value="mistral">Mistral AI</option>
+          <option value="together">Together AI</option>
+          <option value="fireworks">Fireworks AI</option>
+          <option value="perplexity">Perplexity</option>
+          <option value="cohere">Cohere</option>
+          <option value="grok">xAI (Grok)</option>
+          <option value="azure-openai">Azure OpenAI</option>
+          <option value="ollama">Ollama (local)</option>
+          <option value="custom">Custom / OpenAI-compatible endpoint</option>
+        </select>
+      </div>
+
+      <div id="customBaseURLSection" style="display:none;" class="form-section">
+        <label>Base URL (e.g., http://localhost:11434/v1)</label>
+        <input type="url" id="customBaseURL" placeholder="https://..." class="form-input">
+      </div>
+
+      <div class="form-section">
+        <label for="aiModel">Model</label>
+        <input type="text" id="aiModel" list="modelSuggestions" placeholder="Pick a provider first — we'll suggest a model" class="form-input" autocomplete="off">
+        <datalist id="modelSuggestions"></datalist>
+        <p class="hint" id="modelHint">We pre-fill a fast, inexpensive model for each provider — you can leave it as-is or pick another from the list.</p>
+      </div>
+
+      <div class="form-section">
+        <label>API Key</label>
+        <input type="password" id="apiKey" placeholder="Stays in your browser — never stored on any server" class="form-input">
+      </div>
+
+      <div class="button-group">
+        <button id="testApiBtn" class="btn btn-secondary">Test connection</button>
+        <button id="saveSettingsBtn" class="btn btn-primary">Save</button>
+      </div>
+
+      <div id="settingsStatus"></div>
+
+      <div class="step-nav">
+        <span></span>
+        <button id="closeAiSettingsBtn" class="btn btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== QUICK AI CONNECT (mandatory popup shown as soon as the templates load) ===== -->
   <div id="aiConnectModal" class="modal-backdrop" style="display:none;">
     <div class="modal-card">
@@ -135,23 +197,18 @@
       <p class="logo-tagline">Your key. Your data. Your resume.</p>
 
       <nav class="nav">
-        <button data-step="settings" class="nav-btn active">
+        <button data-step="profile" class="nav-btn active">
           <span class="nav-num">1</span>
-          <span class="nav-text"><strong>Connect AI</strong><small>Bring your own key</small></span>
-          <span class="nav-check">✓</span>
-        </button>
-        <button data-step="profile" class="nav-btn">
-          <span class="nav-num">2</span>
           <span class="nav-text"><strong>Your Profile</strong><small>Upload or fill in</small></span>
           <span class="nav-check">✓</span>
         </button>
         <button data-step="job" class="nav-btn">
-          <span class="nav-num">3</span>
+          <span class="nav-num">2</span>
           <span class="nav-text"><strong>The Job</strong><small>Paste the posting</small></span>
           <span class="nav-check">✓</span>
         </button>
         <button data-step="generate" class="nav-btn">
-          <span class="nav-num">4</span>
+          <span class="nav-num">3</span>
           <span class="nav-text"><strong>Generate</strong><small>Tailor &amp; download</small></span>
           <span class="nav-check">✓</span>
         </button>
@@ -197,74 +254,19 @@
           <div id="apiStatusIndicator" class="status-dot"></div>
           <span id="apiStatusText">AI not connected</span>
         </div>
+        <button id="changeAiProviderBtn" class="link-btn">Change AI provider</button>
       </div>
     </aside>
 
     <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
       <div class="step-indicator">
-        <span id="stepNumber">Step 1 of 4</span>
+        <span id="stepNumber">Step 1 of 3</span>
         <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
       </div>
 
-      <!-- STEP 1: CONNECT AI (SETTINGS) -->
-      <section id="step-settings" class="step-content active">
-        <h1>Connect your AI</h1>
-        <p class="step-lead">ApplyJob never charges you and never sees your data on our servers — you plug in your own AI provider key, and it's stored only in this browser.</p>
-
-        <div class="form-section">
-          <h2>Provider</h2>
-          <select id="aiProvider" class="form-input">
-            <option value="openai">OpenAI (GPT-4o, o1)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="gemini">Google Gemini</option>
-            <option value="deepseek">DeepSeek (V3, R1)</option>
-            <option value="openrouter">OpenRouter (400+ models)</option>
-            <option value="groq">Groq (Llama, Mixtral)</option>
-            <option value="mistral">Mistral AI</option>
-            <option value="together">Together AI</option>
-            <option value="fireworks">Fireworks AI</option>
-            <option value="perplexity">Perplexity</option>
-            <option value="cohere">Cohere</option>
-            <option value="grok">xAI (Grok)</option>
-            <option value="azure-openai">Azure OpenAI</option>
-            <option value="ollama">Ollama (local)</option>
-            <option value="custom">Custom / OpenAI-compatible endpoint</option>
-          </select>
-        </div>
-
-        <div id="customBaseURLSection" style="display:none;" class="form-section">
-          <label>Base URL (e.g., http://localhost:11434/v1)</label>
-          <input type="url" id="customBaseURL" placeholder="https://..." class="form-input">
-        </div>
-
-        <div class="form-section">
-          <label for="aiModel">Model</label>
-          <input type="text" id="aiModel" list="modelSuggestions" placeholder="Pick a provider first — we'll suggest a model" class="form-input" autocomplete="off">
-          <datalist id="modelSuggestions"></datalist>
-          <p class="hint" id="modelHint">We pre-fill a fast, inexpensive model for each provider — you can leave it as-is or pick another from the list.</p>
-        </div>
-
-        <div class="form-section">
-          <label>API Key</label>
-          <input type="password" id="apiKey" placeholder="Stays in your browser — never stored on any server" class="form-input">
-        </div>
-
-        <div class="button-group">
-          <button id="testApiBtn" class="btn btn-secondary">Test connection</button>
-          <button id="saveSettingsBtn" class="btn btn-primary">Save</button>
-        </div>
-
-        <div id="settingsStatus"></div>
-
-        <div class="step-nav">
-          <span></span>
-          <button class="btn btn-primary step-next" data-goto="profile">Continue to Profile →</button>
-        </div>
-      </section>
-
-      <!-- STEP 2: PROFILE -->
-      <section id="step-profile" class="step-content">
+      <!-- STEP 1: PROFILE -->
+      <section id="step-profile" class="step-content active">
         <h1>Your profile</h1>
         <p class="step-lead">The fastest way: upload your current resume and let the AI fill everything in. You can edit any field afterwards.</p>
 
@@ -351,7 +353,7 @@
         <div id="saveStatus"></div>
 
         <div class="step-nav">
-          <button class="btn btn-ghost step-back" data-goto="settings">← Back</button>
+          <span></span>
           <button class="btn btn-primary step-next" data-goto="job">Continue to the Job →</button>
         </div>
       </section>
