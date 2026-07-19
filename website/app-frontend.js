@@ -1222,7 +1222,10 @@ async function downloadPDF(html, filename) {
       body: JSON.stringify({ html }),
     });
 
-    if (!response.ok) throw new Error('PDF generation failed');
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.message || errorBody.error || `PDF generation failed (${response.status})`);
+    }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

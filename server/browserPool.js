@@ -12,8 +12,9 @@ const pool = genericPool.createPool(
     create: async () => {
       console.log('[BrowserPool] Creating new browser instance');
       const args = ['--disable-gpu', '--disable-dev-shm-usage', '--disable-extensions', '--no-first-run'];
-      // Most container hosts (Render/Railway/Fly) run without the privileges Chrome's sandbox needs
-      if (process.env.PUPPETEER_NO_SANDBOX === 'true') args.push('--no-sandbox');
+      // Most container hosts (Render/Railway/Fly) run without the privileges Chrome's sandbox needs.
+      // Accepts "true"/"1"/"yes" (case-insensitive) since dashboard env vars are easy to set inconsistently.
+      if (/^(true|1|yes)$/i.test(process.env.PUPPETEER_NO_SANDBOX || '')) args.push('--no-sandbox');
       const browser = await puppeteer.launch({ headless: 'new', args });
       return browser;
     },
