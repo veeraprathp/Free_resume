@@ -1,0 +1,122 @@
+/* Creative Bold Cover Letter */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #1f2937;
+    background: white;
+}
+
+.container {
+    max-width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    background: white;
+}
+
+.creative-header {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: white;
+    padding: 2rem;
+    margin-bottom: 0;
+}
+
+.creative-header h1 {
+    font-family: 'Poppins', sans-serif;
+    font-size: 32pt;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    line-height: 1.1;
+}
+
+.role {
+    font-size: 11pt;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.hero {
+    background: #f3e8ff;
+    border-left: 5px solid #7c3aed;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.hero-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 14pt;
+    font-weight: 600;
+    color: #6d28d9;
+    margin: 0;
+}
+
+.content {
+    padding: 0 2rem 2rem 2rem;
+}
+
+.intro {
+    font-size: 10pt;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.highlights {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+}
+
+.highlight {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.highlight:last-child {
+    margin-bottom: 0;
+}
+
+.bullet {
+    color: #7c3aed;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 12pt;
+}
+
+.highlight p {
+    font-size: 10pt;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.highlight strong {
+    color: #6d28d9;
+}
+
+.para {
+    font-size: 10pt;
+    line-height: 1.7;
+    margin-bottom: 0.8rem;
+}
+
+.cta {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #7c3aed;
+    margin-top: 1.2rem;
+    margin-bottom: 0.3rem;
+}
+
+.sign {
+    font-size: 11pt;
+    font-weight: 700;
+}
+
+@media print {
+    body { background: white; }
+    .container { margin: 0; }
+}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cover Letter - {{profile.fullName}}</title>
+    <style>
+        {{{styles}}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Letterhead -->
+        <div class="letterhead">
+            <h1>{{profile.fullName}}</h1>
+            {{#if profile.email}}<p>{{profile.email}}</p>{{/if}}
+            {{#if profile.phone}}<p>{{profile.phone}}</p>{{/if}}
+            {{#if profile.location}}<p>{{profile.location}}</p>{{/if}}
+        </div>
+
+        <!-- Date -->
+        <p class="date">{{currentDate}}</p>
+
+        <!-- Recipient -->
+        <div class="recipient">
+            {{#if jd.hiringManagerName}}<p>{{jd.hiringManagerName}}</p>{{/if}}
+            {{#if jd.department}}<p>{{jd.department}}</p>{{/if}}
+            {{#if jd.company}}<p>{{jd.company}}</p>{{/if}}
+            {{#if jd.address}}<p>{{jd.address}}</p>{{/if}}
+            {{#if jd.city}}<p>{{jd.city}}{{#if jd.state}}, {{jd.state}}{{/if}} {{jd.zipCode}}</p>{{/if}}
+        </div>
+
+        <!-- Salutation -->
+        <p class="salutation">
+            {{#if jd.hiringManagerName}}
+                Dear {{jd.hiringManagerName}},
+            {{else}}
+                Dear Hiring Manager,
+            {{/if}}
+        </p>
+
+        <!-- Opening Paragraph -->
+        <p class="opening">
+            {{#if content.opening}}
+                {{content.opening}}
+            {{else}}
+                I am writing to express my strong interest in the {{jd.jobTitle}} position at {{jd.company}}. With my background in {{profile.summary}} and proven track record of success, I am confident that I can make a significant contribution to your team.
+            {{/if}}
+        </p>
+
+        <!-- Body Paragraphs -->
+        {{#if content.body}}
+            {{#each content.body}}
+                <p class="body">{{this}}</p>
+            {{/each}}
+        {{else}}
+            <p class="body">
+                Throughout my professional career, I have developed a strong foundation in {{profile.keySkills}}. In my current role, I have successfully {{profile.achievement}}, which demonstrates my ability to deliver results and drive business value. I am particularly drawn to {{jd.company}} because of {{jd.companyInterest}}, and I am excited about the opportunity to contribute to your continued success.
+            </p>
+
+            <p class="body">
+                My technical expertise, combined with my ability to collaborate effectively with cross-functional teams, positions me well to excel in this role. I am particularly skilled in {{profile.specializations}}, and I am eager to bring these competencies to {{jd.company}} to help achieve your organizational goals.
+            </p>
+        {{/if}}
+
+        <!-- Closing Paragraph -->
+        <p class="closing">
+            {{#if content.closing}}
+                {{content.closing}}
+            {{else}}
+                Thank you for considering my application. I would welcome the opportunity to discuss how my qualifications align with your needs. I am available at your convenience for an interview and can be reached at {{profile.phone}} or {{profile.email}}.
+            {{/if}}
+        </p>
+
+        <!-- Sign-off -->
+        <p class="signoff">Sincerely,</p>
+
+        <!-- Signature -->
+        <p class="signature">{{profile.fullName}}</p>
+    </div>
+</body>
+</html>

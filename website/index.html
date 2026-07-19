@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ApplyJob — Tailored resumes with your own AI key</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ===== WELCOME / LANDING (Minimal Single Column: hero → description → 3 bullets → single CTA) ===== -->
+  <div id="welcomeView" class="welcome" style="display:none;">
+    <div class="welcome-inner">
+      <div class="welcome-logo"><span class="logo-mark">Apply</span>Job</div>
+
+      <h1 class="welcome-headline">A free resume,<br>tailored to the job.</h1>
+      <p class="welcome-sub">Browse real designs or jump straight into the builder — download an ATS&#8209;friendly resume and cover letter, powered by your own AI key. Free, private, no signup.</p>
+
+      <div class="welcome-choice-row" role="tablist">
+        <button type="button" id="showTemplatesBtn" class="welcome-choice active" data-choice="templates" role="tab" aria-selected="true">
+          <span class="choice-icon">🎨</span>
+          <span class="choice-text"><strong>Free templates</strong><small>See real designs first</small></span>
+        </button>
+        <button type="button" id="showScratchBtn" class="welcome-choice" data-choice="scratch" role="tab" aria-selected="false">
+          <span class="choice-icon">✍️</span>
+          <span class="choice-text"><strong>Create from scratch</strong><small>Upload a resume or start blank</small></span>
+        </button>
+      </div>
+
+      <!-- TEMPLATES: default view — every working design, rendered with a sample profile -->
+      <div id="welcomeTemplatesPanel" class="welcome-panel">
+        <div class="gallery-filter-tabs" id="galleryFilterTabs"></div>
+        <div class="template-gallery" id="templateGallery">
+          <p class="gallery-loading">Loading templates…</p>
+        </div>
+        <p class="gallery-api-hint">
+          Need a free API key? Grab one from
+          <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">OpenRouter</a>
+          or
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Groq</a>
+          — both have a free tier, no credit card required.
+        </p>
+      </div>
+
+      <!-- SCRATCH: upload-or-blank form, hidden until chosen -->
+      <div id="welcomeScratchPanel" class="welcome-panel" style="display:none;">
+        <div class="welcome-form">
+          <label class="welcome-label" for="welcomeFile">Your current resume (PDF, DOCX, TXT)</label>
+          <input type="file" id="welcomeFile" accept=".pdf,.docx,.txt,.md" class="form-input welcome-file">
+
+          <label class="welcome-label" for="welcomeJD">The job description</label>
+          <input type="text" id="welcomeCompany" placeholder="Company name (optional)" class="form-input">
+          <textarea id="welcomeJD" class="form-input" rows="5" placeholder="Paste the job posting here..."></textarea>
+
+          <button id="welcomeStartBtn" class="btn btn-primary btn-hero">Get my free resume →</button>
+          <a href="#" id="welcomeSkip" class="welcome-skip">or start with a blank profile →</a>
+        </div>
+      </div>
+
+      <ul class="welcome-bullets">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span><strong>100% free</strong> — you bring the AI key, we never charge</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+          <span><strong>ATS&#8209;friendly</strong> — keyword&#8209;matched to every posting</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span><strong>Private</strong> — your data stays in your browser</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== QUICK AI CONNECT (mandatory popup shown as soon as the templates load) ===== -->
+  <div id="aiConnectModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <h2 class="modal-title">Connect to our AI</h2>
+      <p class="hint">Paste a free API key so we can tailor and generate your resume — takes about a minute.</p>
+
+      <label class="welcome-label" for="quickAiProvider">Provider</label>
+      <select id="quickAiProvider" class="form-input">
+        <option value="openrouter" selected>OpenRouter (400+ free models)</option>
+        <option value="groq">Groq (fast, free Llama models)</option>
+      </select>
+
+      <label class="welcome-label" for="quickApiKey">API key</label>
+      <input type="password" id="quickApiKey" placeholder="Paste your key here" class="form-input">
+
+      <button id="quickConnectBtn" class="btn btn-primary btn-hero">Save &amp; continue →</button>
+      <div id="quickConnectStatus" class="hint"></div>
+    </div>
+  </div>
+
+  <!-- ===== AUTH GATE (required before reaching the Generate step) ===== -->
+  <div id="authGateView" class="welcome" style="display:none;">
+    <div class="welcome-inner">
+      <div class="welcome-logo"><span class="logo-mark">Apply</span>Job</div>
+      <h1 class="welcome-headline">One quick step —<br>save your account.</h1>
+      <p class="welcome-sub">Free, takes 10 seconds. Your AI key still never leaves your browser — this just keeps your generated resumes tied to your account.</p>
+
+      <div class="welcome-form">
+        <div id="gateLoginBox" class="gate-panel">
+          <label class="welcome-label" for="gateEmail">Email</label>
+          <input type="email" id="gateEmail" placeholder="jane@example.com" class="form-input">
+          <label class="welcome-label" for="gatePassword">Password</label>
+          <input type="password" id="gatePassword" placeholder="Password" class="form-input">
+          <button id="gateLoginBtn" class="btn btn-primary btn-hero">Log in &amp; continue →</button>
+          <div id="gateError" class="auth-error"></div>
+          <p class="auth-toggle-text">No account? <a href="#" id="gateToSignup">Sign up</a></p>
+        </div>
+        <div id="gateSignupBox" class="gate-panel" style="display:none;">
+          <label class="welcome-label" for="gateSignupName">Full name</label>
+          <input type="text" id="gateSignupName" placeholder="Jane Doe" class="form-input">
+          <label class="welcome-label" for="gateSignupEmail">Email</label>
+          <input type="email" id="gateSignupEmail" placeholder="jane@example.com" class="form-input">
+          <label class="welcome-label" for="gateSignupPassword">Password</label>
+          <input type="password" id="gateSignupPassword" placeholder="Password (min 6 chars)" class="form-input">
+          <button id="gateSignupBtn" class="btn btn-primary btn-hero">Create account &amp; continue →</button>
+          <div id="gateSignupError" class="auth-error"></div>
+          <p class="auth-toggle-text">Have an account? <a href="#" id="gateToLogin">Log in</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="app-container">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+      <div class="logo"><span class="logo-mark">Apply</span>Job</div>
+      <p class="logo-tagline">Your key. Your data. Your resume.</p>
+
+      <nav class="nav">
+        <button data-step="settings" class="nav-btn active">
+          <span class="nav-num">1</span>
+          <span class="nav-text"><strong>Connect AI</strong><small>Bring your own key</small></span>
+          <span class="nav-check">✓</span>
+        </button>
+        <button data-step="profile" class="nav-btn">
+          <span class="nav-num">2</span>
+          <span class="nav-text"><strong>Your Profile</strong><small>Upload or fill in</small></span>
+          <span class="nav-check">✓</span>
+        </button>
+        <button data-step="job" class="nav-btn">
+          <span class="nav-num">3</span>
+          <span class="nav-text"><strong>The Job</strong><small>Paste the posting</small></span>
+          <span class="nav-check">✓</span>
+        </button>
+        <button data-step="generate" class="nav-btn">
+          <span class="nav-num">4</span>
+          <span class="nav-text"><strong>Generate</strong><small>Tailor &amp; download</small></span>
+          <span class="nav-check">✓</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <!-- Account / cross-device sync (optional — never gates BYOK usage) -->
+        <div id="accountBox">
+          <div id="accountSignedOut">
+            <div class="api-status">
+              <div class="status-dot" id="authStatusDot"></div>
+              <span id="authStatusText">Not signed in (local only)</span>
+            </div>
+            <button class="btn btn-secondary btn-block" id="showAuthFormBtn">Sign in to sync</button>
+            <div id="authForms" style="display:none;">
+              <div id="loginFormBox">
+                <input type="email" id="authEmail" placeholder="Email" class="form-input auth-field">
+                <input type="password" id="authPassword" placeholder="Password" class="form-input auth-field">
+                <button class="btn btn-primary btn-block" id="authLoginBtn">Log In</button>
+                <div id="authError" class="auth-error"></div>
+                <p class="auth-toggle-text">No account? <a href="#" id="showSignupLink">Sign up</a></p>
+              </div>
+              <div id="signupFormBox" style="display:none;">
+                <input type="text" id="signupName" placeholder="Full Name" class="form-input auth-field">
+                <input type="email" id="signupEmail" placeholder="Email" class="form-input auth-field">
+                <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" class="form-input auth-field">
+                <button class="btn btn-primary btn-block" id="authSignupBtn">Create Account</button>
+                <div id="signupError" class="auth-error"></div>
+                <p class="auth-toggle-text">Have an account? <a href="#" id="showLoginLink">Log in</a></p>
+              </div>
+            </div>
+          </div>
+          <div id="accountSignedIn" style="display:none;">
+            <div class="api-status">
+              <div class="status-dot connected"></div>
+              <span id="authUserEmail"></span>
+            </div>
+            <button class="btn btn-secondary btn-block" id="authLogoutBtn">Sign Out</button>
+          </div>
+        </div>
+
+        <div class="api-status">
+          <div id="apiStatusIndicator" class="status-dot"></div>
+          <span id="apiStatusText">AI not connected</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+      <div class="step-indicator">
+        <span id="stepNumber">Step 1 of 4</span>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <!-- STEP 1: CONNECT AI (SETTINGS) -->
+      <section id="step-settings" class="step-content active">
+        <h1>Connect your AI</h1>
+        <p class="step-lead">ApplyJob never charges you and never sees your data on our servers — you plug in your own AI provider key, and it's stored only in this browser.</p>
+
+        <div class="form-section">
+          <h2>Provider</h2>
+          <select id="aiProvider" class="form-input">
+            <option value="openai">OpenAI (GPT-4o, o1)</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="gemini">Google Gemini</option>
+            <option value="deepseek">DeepSeek (V3, R1)</option>
+            <option value="openrouter">OpenRouter (400+ models)</option>
+            <option value="groq">Groq (Llama, Mixtral)</option>
+            <option value="mistral">Mistral AI</option>
+            <option value="together">Together AI</option>
+            <option value="fireworks">Fireworks AI</option>
+            <option value="perplexity">Perplexity</option>
+            <option value="cohere">Cohere</option>
+            <option value="grok">xAI (Grok)</option>
+            <option value="azure-openai">Azure OpenAI</option>
+            <option value="ollama">Ollama (local)</option>
+            <option value="custom">Custom / OpenAI-compatible endpoint</option>
+          </select>
+        </div>
+
+        <div id="customBaseURLSection" style="display:none;" class="form-section">
+          <label>Base URL (e.g., http://localhost:11434/v1)</label>
+          <input type="url" id="customBaseURL" placeholder="https://..." class="form-input">
+        </div>
+
+        <div class="form-section">
+          <label for="aiModel">Model</label>
+          <input type="text" id="aiModel" list="modelSuggestions" placeholder="Pick a provider first — we'll suggest a model" class="form-input" autocomplete="off">
+          <datalist id="modelSuggestions"></datalist>
+          <p class="hint" id="modelHint">We pre-fill a fast, inexpensive model for each provider — you can leave it as-is or pick another from the list.</p>
+        </div>
+
+        <div class="form-section">
+          <label>API Key</label>
+          <input type="password" id="apiKey" placeholder="Stays in your browser — never stored on any server" class="form-input">
+        </div>
+
+        <div class="button-group">
+          <button id="testApiBtn" class="btn btn-secondary">Test connection</button>
+          <button id="saveSettingsBtn" class="btn btn-primary">Save</button>
+        </div>
+
+        <div id="settingsStatus"></div>
+
+        <div class="step-nav">
+          <span></span>
+          <button class="btn btn-primary step-next" data-goto="profile">Continue to Profile →</button>
+        </div>
+      </section>
+
+      <!-- STEP 2: PROFILE -->
+      <section id="step-profile" class="step-content">
+        <h1>Your profile</h1>
+        <p class="step-lead">The fastest way: upload your current resume and let the AI fill everything in. You can edit any field afterwards.</p>
+
+        <div class="form-section highlight-section">
+          <h2>Import from resume</h2>
+          <p class="hint">PDF, DOCX, TXT or MD — parsed with your own AI key, nothing uploaded anywhere else.</p>
+          <div class="upload-row">
+            <input type="file" id="resumeUploadInput" accept=".pdf,.docx,.txt,.md" class="form-input">
+            <button id="parseResumeBtn" class="btn btn-primary">Upload &amp; fill my profile</button>
+          </div>
+          <div id="parseKeyMiniForm" class="entry-row" style="display:none;">
+            <select id="parseProvider" class="form-input">
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="openrouter" selected>OpenRouter</option>
+              <option value="groq">Groq</option>
+            </select>
+            <input type="text" id="parseModel" placeholder="Model ID" class="form-input">
+            <input type="password" id="parseApiKey" placeholder="API key (used only for parsing)" class="form-input">
+          </div>
+          <div id="parseStatus"></div>
+        </div>
+
+        <div class="divider"><span>or fill in manually</span></div>
+
+        <div class="form-section">
+          <h2>Basic information</h2>
+          <div class="field-grid">
+            <div class="field"><label for="fullName">Full name</label><input type="text" id="fullName" placeholder="Jane Doe" class="form-input"></div>
+            <div class="field"><label for="email">Email</label><input type="email" id="email" placeholder="jane@example.com" class="form-input"></div>
+            <div class="field"><label for="phone">Phone</label><input type="tel" id="phone" placeholder="+1 555 0100" class="form-input"></div>
+            <div class="field"><label for="location">Location</label><input type="text" id="location" placeholder="City, Country" class="form-input"></div>
+            <div class="field"><label for="linkedin">LinkedIn</label><input type="url" id="linkedin" placeholder="linkedin.com/in/..." class="form-input"></div>
+            <div class="field"><label for="github">GitHub</label><input type="url" id="github" placeholder="github.com/..." class="form-input"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2>Professional summary</h2>
+          <textarea id="summary" placeholder="2–3 sentences about who you are professionally..." class="form-input" rows="4"></textarea>
+        </div>
+
+        <div class="form-section">
+          <h2>Technical skills</h2>
+          <input type="text" id="skillLanguages" placeholder="Languages (Python, JavaScript, SQL...)" class="form-input">
+          <input type="text" id="skillAIML" placeholder="AI/ML (PyTorch, TensorFlow, LangChain...)" class="form-input">
+          <input type="text" id="skillBackend" placeholder="Backend (FastAPI, Node.js, Django...)" class="form-input">
+          <input type="text" id="skillCloud" placeholder="Cloud (AWS, GCP, Azure...)" class="form-input">
+          <input type="text" id="skillFrontend" placeholder="Frontend (React, Vue, CSS...)" class="form-input">
+          <input type="text" id="skillHumanLangs" placeholder="Spoken languages (English, German...)" class="form-input">
+
+          <label class="sub-label">Anything else? Add skills that don't fit the categories above</label>
+          <div id="customSkillsList"></div>
+          <button id="addSkillBtn" class="btn btn-secondary">+ Add skill</button>
+        </div>
+
+        <div class="form-section">
+          <h2>Experience</h2>
+          <div id="experienceList"></div>
+          <button id="addExperienceBtn" class="btn btn-secondary">+ Add experience</button>
+        </div>
+
+        <div class="form-section">
+          <h2>Education</h2>
+          <div id="educationList"></div>
+          <button id="addEducationBtn" class="btn btn-secondary">+ Add education</button>
+        </div>
+
+        <div class="form-section">
+          <h2>Projects</h2>
+          <div id="projectsList"></div>
+          <button id="addProjectBtn" class="btn btn-secondary">+ Add project</button>
+        </div>
+
+        <div class="form-section">
+          <h2>Certifications</h2>
+          <div id="certsList"></div>
+          <button id="addCertBtn" class="btn btn-secondary">+ Add certification</button>
+        </div>
+
+        <button id="saveProfileBtn" class="btn btn-primary btn-large">Save profile</button>
+        <div id="saveStatus"></div>
+
+        <div class="step-nav">
+          <button class="btn btn-ghost step-back" data-goto="settings">← Back</button>
+          <button class="btn btn-primary step-next" data-goto="job">Continue to the Job →</button>
+        </div>
+      </section>
+
+      <!-- STEP 3: JOB DESCRIPTION -->
+      <section id="step-job" class="step-content">
+        <h1>The job you want</h1>
+        <p class="step-lead">Paste the job posting — the AI uses it to mirror the role's keywords and priorities in your resume.</p>
+
+        <div class="form-section">
+          <div class="field-grid">
+            <input type="text" id="jdCompany" placeholder="Company name" class="form-input">
+            <input type="text" id="jdTitle" placeholder="Job title" class="form-input">
+          </div>
+          <input type="text" id="jdLocation" placeholder="Location (optional)" class="form-input">
+        </div>
+
+        <div class="form-section">
+          <label>Job description</label>
+          <textarea id="jdText" placeholder="Paste the full job description here..." class="form-input" rows="12"></textarea>
+        </div>
+
+        <button id="analyzeBtn" class="btn btn-secondary">Analyze keywords (instant, no AI)</button>
+        <div id="keywordResults"></div>
+
+        <div class="step-nav">
+          <button class="btn btn-ghost step-back" data-goto="profile">← Back</button>
+          <button class="btn btn-primary step-next" data-goto="generate">Continue to Generate →</button>
+        </div>
+      </section>
+
+      <!-- STEP 4: GENERATE -->
+      <section id="step-generate" class="step-content">
+        <h1>Generate &amp; download</h1>
+        <p class="step-lead">Pick a writing style and a visual design, then let your AI tailor the documents to this job.</p>
+
+        <div class="form-section">
+          <h2>Resume writing style</h2>
+          <div class="template-selector" id="resumeSelector">
+            <div class="template-card" data-type="classic">
+              <svg class="template-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+              <div class="template-label">Classic</div>
+              <div class="template-desc">ATS-friendly, traditional</div>
+            </div>
+            <div class="template-card" data-type="modern">
+              <svg class="template-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="14" y="16" width="7" height="5" rx="1"/></svg>
+              <div class="template-label">Modern</div>
+              <div class="template-desc">Contemporary, 2-column</div>
+            </div>
+            <div class="template-card" data-type="minimal">
+              <svg class="template-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+              <div class="template-label">Minimal</div>
+              <div class="template-desc">Typography-first</div>
+            </div>
+          </div>
+          <label class="sub-label">Visual design (for preview &amp; PDF)</label>
+          <select id="resumeTemplateId" class="form-input"></select>
+        </div>
+
+        <div class="form-section">
+          <h2>Cover letter tone</h2>
+          <div class="template-selector" id="clSelector">
+            <div class="template-card" data-type="formal">
+              <svg class="template-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+              <div class="template-label">Formal</div>
+              <div class="template-desc">Business letter</div>
+            </div>
+            <div class="template-card" data-type="conversational">
+              <svg class="template-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <div class="template-label">Conversational</div>
+              <div class="template-desc">Warm, personal</div>
+            </div>
+            <div class="template-card" data-type="brief">
+              <svg class="template-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <div class="template-label">Brief</div>
+              <div class="template-desc">Short &amp; punchy</div>
+            </div>
+          </div>
+          <label class="sub-label">Visual design (for preview &amp; PDF)</label>
+          <select id="clTemplateId" class="form-input"></select>
+        </div>
+
+        <div class="form-section">
+          <label>Anything specific to mention? (optional)</label>
+          <textarea id="clCustomInstructions" placeholder='e.g. "Mention my open-source work" or "Explain my career change"' class="form-input" rows="3"></textarea>
+        </div>
+
+        <div id="loadingSpinner" style="display:none;"><span class="spinner-dot"></span> Your AI is writing — this can take up to a minute...</div>
+
+        <div class="generate-block">
+          <h2>Resume</h2>
+          <div class="button-group">
+            <button id="generateBtn" class="btn btn-primary btn-large">Generate resume with AI</button>
+            <button id="previewBtn" class="btn btn-secondary">Preview</button>
+          </div>
+          <div id="resumeAtsMatch" style="display:none;" class="ats-card">
+            <div class="result-header"><h3>ATS match</h3><span id="atsScoreBadge" class="badge"></span></div>
+            <p id="atsScoreDetail" class="hint"></p>
+            <ul id="atsScoreRecommendations" class="ats-recommendations"></ul>
+            <button id="recheckAtsBtn" class="btn btn-secondary btn-small">Recheck ATS score (instant, no AI)</button>
+          </div>
+
+          <div id="resumeEditor" style="display:none;" class="result-card">
+            <div class="result-header"><h3>Your tailored resume</h3></div>
+            <label>Tailored summary</label>
+            <textarea id="editSummary" class="form-input" rows="3"></textarea>
+            <label>Tailored skills (comma separated)</label>
+            <textarea id="editSkills" class="form-input" rows="2"></textarea>
+            <button id="downloadResumeBtn" class="btn btn-primary">Download PDF</button>
+          </div>
+        </div>
+
+        <div class="generate-block">
+          <h2>Cover letter</h2>
+          <div class="button-group">
+            <button id="generateCLBtn" class="btn btn-secondary btn-large">Generate cover letter with AI</button>
+            <button id="previewCLBtn" class="btn btn-secondary">Preview</button>
+          </div>
+          <div id="clEditor" style="display:none;" class="result-card">
+            <div class="result-header"><h3>Your cover letter is ready</h3></div>
+            <button id="downloadCLBtn" class="btn btn-primary">Download PDF</button>
+          </div>
+        </div>
+
+        <div class="step-nav">
+          <button class="btn btn-ghost step-back" data-goto="job">← Back</button>
+          <span></span>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===== PREVIEW SIDEBAR ===== -->
+    <aside class="preview-sidebar" id="previewSidebar">
+      <div class="preview-resizer" id="previewResizer" title="Drag to resize"></div>
+      <div class="preview-toolbar">
+        <div class="preview-tabs">
+          <button class="preview-tab active" data-preview="resume">Resume</button>
+          <button class="preview-tab" data-preview="coverletter">Cover letter</button>
+        </div>
+        <button class="btn btn-secondary btn-small" id="previewEditBtn" style="display:none;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          Edit
+        </button>
+      </div>
+      <p class="preview-hint" id="previewEditHint" style="display:none;">Click any text on the page below and type to change it — your edits go straight into the PDF.</p>
+      <div class="preview-sample-badge" id="previewSampleBadge" style="display:none;">Sample preview — click Generate to create yours</div>
+      <div class="preview-paper">
+        <iframe id="previewIframe" class="preview-iframe" sandbox="allow-same-origin"></iframe>
+      </div>
+      <p class="preview-hint" id="previewHint">Your document preview appears here once generated.</p>
+    </aside>
+  </div>
+
+  <script>
+    // Deployment config: set this to your deployed API base URL (e.g. "https://api.yourdomain.com/api").
+    // Leave unset for local development (defaults to http://localhost:3000/api).
+    // window.__APPLYJOB_API_URL__ = 'https://your-api-host/api';
+  </script>
+  <script src="supabase-client.js"></script>
+  <script src="auth.js"></script>
+  <script src="app-frontend.js"></script>
+</body>
+</html>

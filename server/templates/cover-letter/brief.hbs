@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cover Letter - {{fullName}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            background: white;
+        }
+        .container {
+            max-width: 8.5in;
+            height: 11in;
+            margin: 0 auto;
+            padding: 1in;
+        }
+        .header {
+            margin-bottom: 0.4in;
+        }
+        .contact-block {
+            font-size: 10.5pt;
+            margin-bottom: 0.2in;
+        }
+        .company-info {
+            margin-bottom: 0.3in;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+        .greeting {
+            margin: 0.2in 0;
+        }
+        .paragraph {
+            margin-bottom: 0.12in;
+            text-align: left;
+            line-height: 1.4;
+        }
+        .closing {
+            margin-top: 0.25in;
+        }
+        .signature {
+            margin-top: 0.4in;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Contact Information -->
+        <div class="header">
+            <strong>{{fullName}}</strong><br>
+            <div class="contact-block">
+                {{#if email}}{{email}} | {{/if}}
+                {{#if phone}}{{phone}} | {{/if}}
+                {{#if location}}{{location}}{{/if}}
+            </div>
+        </div>
+
+        <!-- Company Info -->
+        <div class="company-info">
+            {{company}} - {{jobTitle}}
+        </div>
+
+        <!-- Greeting -->
+        <div class="greeting">
+            Hello,
+        </div>
+
+        <!-- Opening (Brief) -->
+        {{#if opening}}
+        <div class="paragraph">
+            {{opening}}
+        </div>
+        {{/if}}
+
+        <!-- Body Paragraphs (Concise) -->
+        {{#if bodyParagraphs}}
+            {{#each bodyParagraphs}}
+            <div class="paragraph">
+                {{this}}
+            </div>
+            {{/each}}
+        {{/if}}
+
+        <!-- Closing -->
+        {{#if closing}}
+        <div class="paragraph">
+            {{closing}}
+        </div>
+        {{/if}}
+
+        <!-- Sign-off -->
+        <div class="closing">
+            Thanks,
+        </div>
+
+        <!-- Signature -->
+        <div class="signature">
+            {{fullName}}
+            {{#if email}}<br>{{email}}{{/if}}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cover Letter - {{profile.fullName}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>{{{styles}}}</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>{{profile.fullName}}</h1>
+                <p class="tagline">Looking to create impact at {{jd.company}}</p>
+            </div>
+            <div class="contact">
+                {{#if profile.email}}<a href="mailto:{{profile.email}}">{{profile.email}}</a>{{/if}}
+                {{#if profile.phone}}<span>{{profile.phone}}</span>{{/if}}
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Greeting -->
+            <p class="greeting">
+                {{#if jd.hiringManagerName}}Hi {{jd.hiringManagerName}},{{else}}Hi there,{{/if}}
+            </p>
+
+            <!-- Opening -->
+            <p class="paragraph">
+                {{#if content.opening}}
+                    {{content.opening}}
+                {{else}}
+                    I'm excited about the {{jd.jobTitle}} opportunity at {{jd.company}}. Your work in {{jd.companyMission}} really resonates with me, and I'm confident my background in {{profile.summary}} makes me a great fit for your team.
+                {{/if}}
+            </p>
+
+            <!-- Body -->
+            {{#if content.body}}
+                {{#each content.body}}
+                    <p class="paragraph">{{this}}</p>
+                {{/each}}
+            {{else}}
+                <p class="paragraph">
+                    What I've enjoyed most in my career is {{profile.achievement}}. I've built strong skills in {{profile.keySkills}}, and I'm always looking for opportunities to tackle new challenges and grow alongside talented teams.
+                </p>
+
+                <p class="paragraph">
+                    I'd love to chat about how I can contribute to {{jd.company}}. Looking forward to connecting with you soon!
+                </p>
+            {{/if}}
+
+            <!-- Closing -->
+            <p class="closing">
+                {{#if content.closing}}
+                    {{content.closing}}
+                {{else}}
+                    Cheers,
+                {{/if}}
+            </p>
+
+            <!-- Signature -->
+            <p class="signature">{{profile.fullName}}</p>
+        </div>
+    </div>
+</body>
+</html>

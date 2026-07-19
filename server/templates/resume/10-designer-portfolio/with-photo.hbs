@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>{{{styles}}}</style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <img src="{{basics.image}}" alt="{{basics.name}}" class="photo"><br>
+      <h1>{{basics.name}}</h1>
+      <div class="label">{{basics.label}}</div>
+      <div class="contact-line">
+        {{basics.email}} &bull; {{basics.phone}} &bull; {{basics.location.city}}, {{basics.location.region}}
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="section">
+        <h2>About Me</h2>
+        <p class="summary-text">{{basics.summary}}</p>
+      </div>
+
+      {{#ifArray work}}
+      <div class="section">
+        <h2>Experience</h2>
+        {{#each work}}
+        <div class="job">
+          <div class="job-header">
+            <div>
+              <span class="job-title">{{this.position}}</span> <span class="job-company">at {{this.name}}</span>
+            </div>
+            <div class="job-date">{{dateRange this.startDate this.endDate}}</div>
+          </div>
+          {{#ifArray this.highlights}}
+          <ul class="job-highlights">
+            {{#each this.highlights}}
+            <li>{{this}}</li>
+            {{/each}}
+          </ul>
+          {{/ifArray}}
+        </div>
+        {{/each}}
+      </div>
+      {{/ifArray}}
+
+      {{#ifArray education}}
+      <div class="section">
+        <h2>Education</h2>
+        {{#each education}}
+        <div class="edu-item">
+          <div class="edu-degree">{{this.studyType}} in {{this.area}}</div>
+          <div class="edu-school">{{this.institution}}</div>
+          <div class="edu-date">{{formatDate this.endDate}}</div>
+        </div>
+        {{/each}}
+      </div>
+      {{/ifArray}}
+
+      {{#ifArray certificates}}
+      <div class="section">
+        <h2>Certifications</h2>
+        {{#each certificates}}
+        <div class="edu-item">
+          <div class="edu-degree">{{this.name}}</div>
+          <div class="edu-school">{{this.issuer}}</div>
+          <div class="edu-date">{{formatDate this.date}}</div>
+        </div>
+        {{/each}}
+      </div>
+      {{/ifArray}}
+
+      {{#ifArray skills}}
+      <div class="section">
+        <h2>Skills</h2>
+        <div class="skills-grid">
+          {{#each skills}}
+          {{#each this.keywords}}
+          <span class="skill-badge">{{this}}</span>
+          {{/each}}
+          {{/each}}
+        </div>
+      </div>
+      {{/ifArray}}
+
+      {{#ifArray languages}}
+      <div class="section">
+        <h2>Languages</h2>
+        {{#each languages}}
+        <span class="language-item">{{this.language}} <span class="fluency">({{this.fluency}})</span></span>
+        {{/each}}
+      </div>
+      {{/ifArray}}
+    </div>
+  </div>
+</body>
+</html>

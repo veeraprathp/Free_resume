@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cover Letter - {{fullName}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000;
+            background: white;
+        }
+        .container {
+            max-width: 8.5in;
+            height: 11in;
+            margin: 0 auto;
+            padding: 1in;
+        }
+        .header {
+            margin-bottom: 0.5in;
+        }
+        .contact-block {
+            font-size: 11pt;
+            margin-bottom: 0.3in;
+        }
+        .date {
+            margin-bottom: 0.3in;
+        }
+        .salutation {
+            margin: 0.3in 0;
+        }
+        .paragraph {
+            text-align: justify;
+            margin-bottom: 0.2in;
+            text-indent: 0.5in;
+        }
+        .closing {
+            margin-top: 0.3in;
+        }
+        .signature-block {
+            margin-top: 0.5in;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Contact Information -->
+        <div class="header">
+            <div class="contact-block">
+                {{fullName}}<br>
+                {{#if email}}{{email}}<br>{{/if}}
+                {{#if phone}}{{phone}}<br>{{/if}}
+                {{#if location}}{{location}}<br>{{/if}}
+            </div>
+            <div class="date">{{generatedAt}}</div>
+        </div>
+
+        <!-- Salutation -->
+        <div class="salutation">
+            Dear Hiring Manager,
+        </div>
+
+        <!-- Opening Paragraph -->
+        {{#if opening}}
+        <div class="paragraph">
+            {{opening}}
+        </div>
+        {{/if}}
+
+        <!-- Body Paragraphs -->
+        {{#if bodyParagraphs}}
+            {{#each bodyParagraphs}}
+            <div class="paragraph">
+                {{this}}
+            </div>
+            {{/each}}
+        {{/if}}
+
+        <!-- Closing Paragraph -->
+        {{#if closing}}
+        <div class="paragraph">
+            {{closing}}
+        </div>
+        {{/if}}
+
+        <!-- Sign-off -->
+        <div class="closing">
+            Sincerely,
+        </div>
+
+        <!-- Signature Block -->
+        <div class="signature-block">
+            <div style="height: 0.5in;"></div>
+            <div>{{fullName}}</div>
+            {{#if email}}<div>{{email}}</div>{{/if}}
+            {{#if phone}}<div>{{phone}}</div>{{/if}}
+        </div>
+    </div>
+</body>
+</html>

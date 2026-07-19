@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: #2d2d2d;
+}
+
+.page {
+  width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto;
+  background: #fff;
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 2.7in;
+  flex-shrink: 0;
+  background: #7c3aed;
+  background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
+  color: #fff;
+  padding: 36px 26px;
+}
+
+.sidebar-name h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20pt;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.sidebar-name .label {
+  font-size: 10pt;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+
+.sidebar-section { margin-top: 30px; }
+
+.sidebar-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 10.5pt;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.35);
+}
+
+.contact-item {
+  font-size: 9pt;
+  opacity: 0.9;
+  margin-bottom: 6px;
+  word-break: break-word;
+}
+
+.contact-item .fluency { opacity: 0.7; }
+
+.skills-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.skill-pill {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.35);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 8.5pt;
+}
+
+.content { flex: 1; padding: 40px 36px; }
+
+.section { margin-bottom: 26px; }
+
+.section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 14pt;
+  font-weight: 700;
+  color: #6d28d9;
+  margin-bottom: 12px;
+}
+
+.summary-text { color: #4b5563; line-height: 1.7; }
+
+.job { margin-bottom: 18px; }
+.job-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; }
+.job-title { font-weight: 600; font-size: 11pt; color: #111827; }
+.job-date { font-size: 9pt; color: #9ca3af; }
+.job-company { color: #7c3aed; font-weight: 500; font-size: 9.5pt; margin-top: 2px; }
+.job-highlights { list-style: none; margin-top: 8px; }
+.job-highlights li { font-size: 9.5pt; margin-bottom: 4px; color: #4b5563; padding-left: 16px; position: relative; }
+.job-highlights li::before { content: "—"; position: absolute; left: 0; color: #a78bfa; }
+
+.edu-item { margin-bottom: 10px; }
+.edu-degree { font-weight: 600; font-size: 10.5pt; color: #111827; }
+.edu-school { color: #6b7280; font-size: 9.5pt; }
+
+@media print {
+  .page { box-shadow: none; margin: 0; }
+  .sidebar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .skill-pill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

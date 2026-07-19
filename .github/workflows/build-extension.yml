@@ -1,0 +1,48 @@
+name: Build and Package Extension
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build extension
+      run: npm run build-ext
+
+    - name: Package extension
+      run: |
+        mkdir -p dist
+        cd extension && zip -r ../dist/applyjob-extension.zip . -x "node_modules/*" ".git/*"
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: applyjob-extension-zip
+        path: dist/applyjob-extension.zip
+
+    - name: Upload to Chrome Web Store
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: mobilefirstllc/chrome-extension-upload@v1
+      with:
+        extension-id: ${{ secrets.EXTENSION_ID }}
+        client-id: ${{ secrets.CLIENT_ID }}
+        client-secret: ${{ secrets.CLIENT_SECRET }}
+        refresh-token: ${{ secrets.REFRESH_TOKEN }}
+        file-path: dist/applyjob-extension.zip
+        publish: true

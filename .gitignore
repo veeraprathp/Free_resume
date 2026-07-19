@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+dist/
+.env
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local Claude Code settings (may accumulate locally-run command history)
+.claude/settings.local.json
+
+# Chrome Extension artifacts
+*.crx
+*.pem
+
+# Local settings
+extension/dist/
+
+# Vendored third-party tool (own git history, installed locally not committed)
+ats-tool/
+
+# Sensitive & Personal Data
+.env
+supabase/.env
+supabase/ .env
+applications/
+jd.txt
+**/jd.txt
+**/veera_prathap_*.pdf

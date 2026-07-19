@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cover Letter - {{profile.fullName}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>{{{styles}}}</style>
+</head>
+<body>
+    <div class="container">
+        <header class="creative-header">
+            <h1>{{profile.fullName}}</h1>
+            <p class="role">{{profile.summary}}</p>
+        </header>
+
+        <div class="hero">
+            <p class="hero-text">I'm excited to join {{jd.company}} as your next {{jd.jobTitle}}</p>
+        </div>
+
+        <div class="content">
+            <p class="intro">
+                {{#if content.opening}}
+                    {{content.opening}}
+                {{else}}
+                    Hi {{jd.hiringManagerName}}! I've been following {{jd.company}}'s work and I'm genuinely excited about this opportunity. Here's why I'm a great fit:
+                {{/if}}
+            </p>
+
+            {{#if content.body}}
+                {{#each content.body}}
+                    <p class="para">{{this}}</p>
+                {{/each}}
+            {{else}}
+                <div class="highlights">
+                    <div class="highlight">
+                        <span class="bullet">→</span>
+                        <p><strong>What I Do:</strong> {{profile.keySkills}}</p>
+                    </div>
+                    <div class="highlight">
+                        <span class="bullet">→</span>
+                        <p><strong>What I've Achieved:</strong> {{profile.achievement}}</p>
+                    </div>
+                    <div class="highlight">
+                        <span class="bullet">→</span>
+                        <p><strong>Why I Want This:</strong> {{jd.companyMission}}</p>
+                    </div>
+                </div>
+            {{/if}}
+
+            <p class="cta">
+                {{#if content.closing}}
+                    {{content.closing}}
+                {{else}}
+                    Let's chat! I'm available for a call at {{profile.phone}} or {{profile.email}}
+                {{/if}}
+            </p>
+
+            <p class="sign">{{profile.fullName}}</p>
+        </div>
+    </div>
+</body>
+</html>

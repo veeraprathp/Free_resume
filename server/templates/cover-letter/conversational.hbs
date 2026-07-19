@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cover Letter - {{fullName}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+        }
+        .container {
+            max-width: 8.5in;
+            height: 11in;
+            margin: 0 auto;
+            padding: 1in;
+        }
+        .header {
+            margin-bottom: 0.4in;
+            padding-bottom: 0.2in;
+            border-bottom: 2px solid #667eea;
+        }
+        .contact-block {
+            font-size: 10.5pt;
+            color: #666;
+        }
+        .contact-block div {
+            margin-bottom: 2pt;
+        }
+        .greeting {
+            margin: 0.3in 0;
+            font-size: 11.5pt;
+            font-weight: 500;
+        }
+        .paragraph {
+            margin-bottom: 0.15in;
+            text-align: left;
+            line-height: 1.5;
+            font-size: 11pt;
+        }
+        .closing-block {
+            margin-top: 0.3in;
+        }
+        .signature-block {
+            margin-top: 0.5in;
+            font-weight: 500;
+        }
+        .company-mention {
+            color: #667eea;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Contact Information -->
+        <div class="header">
+            <div style="font-weight: 600; font-size: 12pt; margin-bottom: 4pt;">{{fullName}}</div>
+            <div class="contact-block">
+                {{#if email}}<div>{{email}}</div>{{/if}}
+                {{#if phone}}<div>{{phone}}</div>{{/if}}
+                {{#if location}}<div>{{location}}</div>{{/if}}
+            </div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="greeting">
+            Hi there!
+        </div>
+
+        <!-- Opening Paragraph -->
+        {{#if opening}}
+        <div class="paragraph">
+            {{opening}}
+        </div>
+        {{/if}}
+
+        <!-- Body Paragraphs -->
+        {{#if bodyParagraphs}}
+            {{#each bodyParagraphs}}
+            <div class="paragraph">
+                {{this}}
+            </div>
+            {{/each}}
+        {{/if}}
+
+        <!-- Closing Paragraph -->
+        {{#if closing}}
+        <div class="paragraph">
+            {{closing}}
+        </div>
+        {{/if}}
+
+        <!-- Sign-off -->
+        <div class="closing-block">
+            <div style="margin-bottom: 0.2in;">Cheers,</div>
+            <div class="signature-block">
+                {{fullName}}
+                {{#if email}}<div style="font-weight: normal; font-size: 10.5pt;">{{email}}</div>{{/if}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

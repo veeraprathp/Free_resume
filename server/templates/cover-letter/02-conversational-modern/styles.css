@@ -1,0 +1,101 @@
+/* Conversational Modern Cover Letter */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #374151;
+    background: #f9fafb;
+}
+
+.container {
+    max-width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    color: white;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.header-content h1 {
+    font-size: 24pt;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+}
+
+.tagline {
+    font-size: 10pt;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.contact {
+    text-align: right;
+    font-size: 9pt;
+    line-height: 1.6;
+}
+
+.contact a {
+    color: white;
+    text-decoration: none;
+}
+
+.contact span {
+    display: block;
+}
+
+/* Content */
+.content {
+    padding: 1.8rem 2rem;
+}
+
+.greeting {
+    font-size: 11pt;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+}
+
+.paragraph {
+    font-size: 10pt;
+    line-height: 1.7;
+    margin-bottom: 0.8rem;
+    text-align: left;
+}
+
+.closing {
+    font-size: 10pt;
+    margin-bottom: 0.3rem;
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+.signature {
+    font-size: 11pt;
+    font-weight: 600;
+}
+
+/* Print */
+@media print {
+    body {
+        background: white;
+    }
+    .container {
+        box-shadow: none;
+        margin: 0;
+    }
+}

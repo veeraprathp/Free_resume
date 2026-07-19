@@ -1,0 +1,219 @@
+/* Modern Gradient Resume */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 10pt;
+    line-height: 1.6;
+    color: #1f2937;
+    background: #f3f4f6;
+}
+
+.container {
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+header.header-with-photo {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    color: white;
+    padding: 2rem;
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.photo-container {
+    flex-shrink: 0;
+}
+
+.photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
+    object-fit: cover;
+}
+
+.header-content {
+    flex: 1;
+}
+
+h1 {
+    font-size: 28pt;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    letter-spacing: -0.5px;
+}
+
+.label {
+    font-size: 12pt;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 0.8rem;
+}
+
+.contact-info {
+    font-size: 9pt;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.contact-info a {
+    color: white;
+    text-decoration: none;
+}
+
+.separator {
+    opacity: 0.7;
+}
+
+/* Content */
+.content {
+    padding: 2rem;
+}
+
+.summary {
+    background: #f0f9ff;
+    border-left: 4px solid #2563eb;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 10pt;
+    line-height: 1.7;
+}
+
+/* Sections */
+section {
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1e40af;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Entry */
+.entry {
+    margin-bottom: 1rem;
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.3rem;
+}
+
+.entry h3 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.company, .school {
+    font-size: 9pt;
+    color: #2563eb;
+    font-weight: 500;
+}
+
+.date {
+    font-size: 9pt;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.entry p {
+    font-size: 9pt;
+    margin-bottom: 0.4rem;
+    line-height: 1.6;
+}
+
+.entry ul {
+    margin-left: 1.5rem;
+    margin-top: 0.4rem;
+    font-size: 9pt;
+}
+
+.entry li {
+    margin-bottom: 0.3rem;
+    line-height: 1.5;
+}
+
+/* Skills */
+.skills-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.skill-item {
+    border: 1px solid #e5e7eb;
+    padding: 0.8rem;
+    border-radius: 4px;
+}
+
+.skill-item strong {
+    display: block;
+    font-size: 9pt;
+    color: #1e40af;
+    margin-bottom: 0.3rem;
+}
+
+.skill-item p {
+    font-size: 9pt;
+    color: #6b7280;
+}
+
+/* Languages */
+.languages-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.language-item {
+    font-size: 9pt;
+    padding: 0.4rem 0;
+}
+
+.fluency {
+    color: #6b7280;
+    font-size: 8pt;
+}
+
+/* Print */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        background: white;
+    }
+
+    .container {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        box-shadow: none;
+    }
+}

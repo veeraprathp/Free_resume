@@ -1,0 +1,127 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: Calibri, 'Segoe UI', sans-serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  color: #000;
+  background: #fff;
+}
+
+.page {
+  width: 8.5in;
+  min-height: 11in;
+  margin: 0 auto;
+  background: #fff;
+  padding: 48px 60px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  font-size: 22pt;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 6px;
+}
+
+.contact-line {
+  font-size: 10pt;
+  color: #000;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section h2 {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #000;
+  text-transform: uppercase;
+  border-bottom: 2px solid #000;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+
+.summary-text {
+  font-size: 10pt;
+  color: #000;
+  line-height: 1.6;
+}
+
+.job {
+  margin-bottom: 14px;
+}
+
+.job-title {
+  font-weight: 700;
+  font-size: 10.5pt;
+  color: #000;
+}
+
+.job-company {
+  font-weight: 400;
+  color: #000;
+}
+
+.job-date {
+  font-size: 9.5pt;
+  color: #000;
+}
+
+.job-highlights {
+  list-style: disc;
+  padding-left: 20px;
+  margin-top: 4px;
+}
+
+.job-highlights li {
+  font-size: 10pt;
+  margin-bottom: 3px;
+  color: #000;
+}
+
+.edu-item {
+  margin-bottom: 10px;
+}
+
+.edu-degree {
+  font-weight: 700;
+  font-size: 10.5pt;
+  color: #000;
+}
+
+.edu-school {
+  color: #000;
+  font-size: 10pt;
+}
+
+.edu-date {
+  font-size: 9.5pt;
+  color: #000;
+}
+
+.skill-line {
+  margin-bottom: 4px;
+  font-size: 10pt;
+  color: #000;
+}
+
+.skill-line strong {
+  font-weight: 700;
+}
+
+.language-item {
+  font-size: 10pt;
+  color: #000;
+  margin-right: 16px;
+}
+
+@media print {
+  body { background: none; }
+  .page { box-shadow: none; margin: 0; padding: 0.5in 0.6in; }
+}

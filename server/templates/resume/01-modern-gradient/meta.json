@@ -1,0 +1,18 @@
+{
+  "id": "modern-gradient",
+  "name": "Modern Gradient",
+  "description": "Contemporary design with gradient accents and modern typography",
+  "category": "Modern & Creative",
+  "version": "1.0.0",
+  "author": "ApplyJob Design Team",
+  "ats_friendly": false,
+  "supports_photo": true,
+  "photo_position": "top-center-circle",
+  "color_scheme": ["#2563eb", "#1e40af"],
+  "fonts": ["Inter", "Fira Code"],
+  "sections_supported": ["basics", "summary", "work", "education", "skills", "languages"],
+  "customization_options": {
+    "accent_color": true,
+    "spacing": true
+  }
+}

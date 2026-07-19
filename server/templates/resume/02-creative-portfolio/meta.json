@@ -1,0 +1,15 @@
+{
+  "id": "creative-portfolio",
+  "name": "Creative Portfolio",
+  "description": "Artistic design with sidebar layout, perfect for creative professionals",
+  "category": "Modern & Creative",
+  "version": "1.0.0",
+  "author": "ApplyJob Design Team",
+  "ats_friendly": false,
+  "supports_photo": true,
+  "photo_position": "left-sidebar-square",
+  "color_scheme": ["#7c3aed", "#6d28d9"],
+  "fonts": ["Playfair Display", "Inter"],
+  "sections_supported": ["basics", "work", "education", "skills", "projects"],
+  "customization_options": {"accent_color": true, "spacing": true}
+}

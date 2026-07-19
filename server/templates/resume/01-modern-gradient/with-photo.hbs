@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{basics.name}} - Resume</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        {{{styles}}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Photo -->
+        <header class="header-with-photo">
+            {{#if basics.image}}
+            <div class="photo-container">
+                <img src="{{basics.image}}" alt="{{basics.name}}" class="photo">
+            </div>
+            {{/if}}
+            <div class="header-content">
+                <h1>{{basics.name}}</h1>
+                {{#if basics.label}}<p class="label">{{basics.label}}</p>{{/if}}
+                <div class="contact-info">
+                    {{#if basics.email}}<a href="mailto:{{basics.email}}">{{basics.email}}</a>{{/if}}
+                    {{#if basics.phone}}<span class="separator">•</span><span>{{basics.phone}}</span>{{/if}}
+                    {{#if basics.location.city}}<span class="separator">•</span><span>{{basics.location.city}}</span>{{/if}}
+                </div>
+            </div>
+        </header>
+
+        <div class="content">
+            <!-- Summary -->
+            {{#if basics.summary}}
+            <section class="summary">
+                <p>{{basics.summary}}</p>
+            </section>
+            {{/if}}
+
+            <!-- Experience -->
+            {{#ifArray work}}
+            <section>
+                <h2 class="section-title">Experience</h2>
+                {{#each work}}
+                <div class="entry">
+                    <div class="entry-header">
+                        <h3>{{this.position}}</h3>
+                        <span class="company">{{this.name}}</span>
+                        <span class="date">{{dateRange this.startDate this.endDate}}</span>
+                    </div>
+                    {{#if this.summary}}<p>{{this.summary}}</p>{{/if}}
+                    {{#ifArray this.highlights}}
+                    <ul>
+                        {{#each this.highlights}}<li>{{this}}</li>{{/each}}
+                    </ul>
+                    {{/ifArray}}
+                </div>
+                {{/each}}
+            </section>
+            {{/ifArray}}
+
+            <!-- Education -->
+            {{#ifArray education}}
+            <section>
+                <h2 class="section-title">Education</h2>
+                {{#each education}}
+                <div class="entry">
+                    <div class="entry-header">
+                        <h3>{{this.studyType}}{{#if this.area}} in {{this.area}}{{/if}}</h3>
+                        <span class="school">{{this.institution}}</span>
+                        {{#if this.endDate}}<span class="date">{{formatDate this.endDate}}</span>{{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </section>
+            {{/ifArray}}
+
+            <!-- Certifications -->
+            {{#ifArray certificates}}
+            <section>
+                <h2 class="section-title">Certifications</h2>
+                {{#each certificates}}
+                <div class="entry">
+                    <div class="entry-header">
+                        <h3>{{this.name}}</h3>
+                        <span class="school">{{this.issuer}}</span>
+                        {{#if this.date}}<span class="date">{{formatDate this.date}}</span>{{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </section>
+            {{/ifArray}}
+
+            <!-- Skills -->
+            {{#ifArray skills}}
+            <section>
+                <h2 class="section-title">Skills</h2>
+                <div class="skills-grid">
+                    {{#each skills}}
+                    <div class="skill-item">
+                        <strong>{{this.name}}</strong>
+                        {{#ifArray this.keywords}}<p>{{join this.keywords ", "}}</p>{{/ifArray}}
+                    </div>
+                    {{/each}}
+                </div>
+            </section>
+            {{/ifArray}}
+
+            <!-- Languages -->
+            {{#ifArray languages}}
+            <section>
+                <h2 class="section-title">Languages</h2>
+                <div class="languages-list">
+                    {{#each languages}}
+                    <div class="language-item">{{this.language}} <span class="fluency">({{this.fluency}})</span></div>
+                    {{/each}}
+                </div>
+            </section>
+            {{/ifArray}}
+        </div>
+    </div>
+</body>
+</html>

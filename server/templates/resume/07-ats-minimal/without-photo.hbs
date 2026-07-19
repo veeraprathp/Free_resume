@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{basics.name}} - Resume</title>
+    <style>
+        {{{styles}}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>{{basics.name}}</h1>
+            {{#if basics.label}}<p class="label">{{basics.label}}</p>{{/if}}
+        </header>
+
+        <!-- Contact Info -->
+        <section class="contact-info">
+            {{#if basics.email}}<div>Email: {{basics.email}}</div>{{/if}}
+            {{#if basics.phone}}<div>Phone: {{basics.phone}}</div>{{/if}}
+            {{#if basics.location.city}}<div>Location: {{basics.location.city}}{{#if basics.location.region}}, {{basics.location.region}}{{/if}}</div>{{/if}}
+            {{#if basics.url}}<div>Website: <a href="{{basics.url}}">{{basics.url}}</a></div>{{/if}}
+        </section>
+
+        <!-- Summary -->
+        {{#if basics.summary}}
+        <section>
+            <h2>Summary</h2>
+            <p>{{basics.summary}}</p>
+        </section>
+        {{/if}}
+
+        <!-- Experience -->
+        {{#ifArray work}}
+        <section>
+            <h2>Experience</h2>
+            {{#each work}}
+            <div class="entry">
+                <div class="entry-title">
+                    <strong>{{this.position}}</strong>
+                    {{#if this.name}}- {{this.name}}{{/if}}
+                </div>
+                {{#if this.startDate}}
+                <div class="entry-meta">
+                    {{dateRange this.startDate this.endDate}}
+                    {{#if this.location}}- {{this.location}}{{/if}}
+                </div>
+                {{/if}}
+                {{#if this.summary}}<p>{{this.summary}}</p>{{/if}}
+                {{#ifArray this.highlights}}
+                <ul>
+                    {{#each this.highlights}}<li>{{this}}</li>{{/each}}
+                </ul>
+                {{/ifArray}}
+            </div>
+            {{/each}}
+        </section>
+        {{/ifArray}}
+
+        <!-- Education -->
+        {{#ifArray education}}
+        <section>
+            <h2>Education</h2>
+            {{#each education}}
+            <div class="entry">
+                <div class="entry-title">
+                    <strong>{{this.studyType}}{{#if this.area}} in {{this.area}}{{/if}}</strong>
+                    {{#if this.institution}}- {{this.institution}}{{/if}}
+                </div>
+                {{#if this.endDate}}<div class="entry-meta">{{formatDate this.endDate}}</div>{{/if}}
+            </div>
+            {{/each}}
+        </section>
+        {{/ifArray}}
+
+        <!-- Certifications -->
+        {{#ifArray certificates}}
+        <section>
+            <h2>Certifications</h2>
+            {{#each certificates}}
+            <div class="entry">
+                <div class="entry-title">
+                    <strong>{{this.name}}</strong>
+                    {{#if this.issuer}}- {{this.issuer}}{{/if}}
+                </div>
+                {{#if this.date}}<div class="entry-meta">{{formatDate this.date}}</div>{{/if}}
+            </div>
+            {{/each}}
+        </section>
+        {{/ifArray}}
+
+        <!-- Skills -->
+        {{#ifArray skills}}
+        <section>
+            <h2>Skills</h2>
+            {{#each skills}}
+            <div class="skill-group">
+                <strong>{{this.name}}:</strong>
+                {{#ifArray this.keywords}}
+                <span>{{join this.keywords ", "}}</span>
+                {{/ifArray}}
+            </div>
+            {{/each}}
+        </section>
+        {{/ifArray}}
+
+        <!-- Languages -->
+        {{#ifArray languages}}
+        <section>
+            <h2>Languages</h2>
+            {{#each languages}}
+            <div>{{this.language}} - {{this.fluency}}</div>
+            {{/each}}
+        </section>
+        {{/ifArray}}
+    </div>
+</body>
+</html>

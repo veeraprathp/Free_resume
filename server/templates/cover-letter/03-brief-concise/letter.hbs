@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cover Letter - {{profile.fullName}}</title>
+    <style>{{{styles}}}</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>{{profile.fullName}}</h1>
+            <p>{{profile.email}} | {{profile.phone}}</p>
+        </div>
+
+        <p class="to">{{jd.hiringManagerName}}, {{jd.company}}</p>
+
+        <p class="opening">
+            {{#if content.opening}}{{content.opening}}{{else}}I'm a strong match for the {{jd.jobTitle}} position. My {{profile.summary}} and {{profile.keySkills}} directly align with your needs.{{/if}}
+        </p>
+
+        {{#if content.body}}
+            {{#each content.body}}<p class="body">{{this}}</p>{{/each}}
+        {{else}}
+            <p class="body">I've {{profile.achievement}} in my recent role, demonstrating my ability to deliver results. I'm ready to bring this same impact to your team.</p>
+        {{/if}}
+
+        <p class="closing">
+            {{#if content.closing}}{{content.closing}}{{else}}Let's discuss how I can contribute. Reach out at {{profile.phone}} or {{profile.email}}.{{/if}}
+        </p>
+
+        <p class="signature">{{profile.fullName}}</p>
+    </div>
+</body>
+</html>
