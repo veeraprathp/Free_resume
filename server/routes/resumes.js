@@ -45,16 +45,17 @@ router.post('/', async (req, res) => {
     const { profile, jobDescription, provider, apiKey, model, baseURL, resumeType = 'classic' } = req.body;
 
     if (!profile || !profile.fullName) return res.status(400).json({ error: 'profile.fullName is required' });
-    if (!jobDescription) return res.status(400).json({ error: 'jobDescription is required' });
     if (!provider || !apiKey || !model) return res.status(400).json({ error: 'provider, apiKey, and model are required' });
 
     const normalizedProfile = normalizeProfile(profile);
-    const parsedJob = parseJobDescription(jobDescription);
+    // Job description is optional — without one, buildResumePrompt writes a
+    // general-purpose resume instead of tailoring to a (nonexistent) role.
+    const parsedJob = parseJobDescription(jobDescription || '');
 
     const jd = {
       company: req.body.company || 'the company',
       jobTitle: req.body.jobTitle || 'the position',
-      description: jobDescription
+      description: jobDescription || ''
     };
 
     const prompt = buildResumePrompt(resumeType, normalizedProfile, jd);
@@ -76,14 +77,18 @@ router.post('/', async (req, res) => {
     // input regardless of what the model returned.
     resumeContent = enforceFactualIntegrity(resumeContent, normalizedProfile);
 
-    const atsResult = calculateATSScore(resumeContent, parsedJob.keywords);
+    // No JD means nothing to score against — null signals the frontend to
+    // hide the ATS card rather than show a misleading "0% match".
+    const atsResult = jobDescription
+      ? calculateATSScore(resumeContent, parsedJob.keywords)
+      : null;
 
     res.json({
       resumeContent,
-      atsScore: atsResult.score,
-      matchedKeywords: atsResult.matchedKeywords,
-      missingKeywords: atsResult.missingKeywords,
-      recommendations: atsResult.recommendations
+      atsScore: atsResult ? atsResult.score : null,
+      matchedKeywords: atsResult ? atsResult.matchedKeywords : [],
+      missingKeywords: atsResult ? atsResult.missingKeywords : [],
+      recommendations: atsResult ? atsResult.recommendations : []
     });
   } catch (error) {
     console.error('[RESUMES] Error:', error.message);

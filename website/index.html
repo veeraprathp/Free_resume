@@ -367,19 +367,19 @@
       <!-- STEP 3: JOB DESCRIPTION -->
       <section id="step-job" class="step-content">
         <h1>The job you want</h1>
-        <p class="step-lead">Paste the job posting — the AI uses it to mirror the role's keywords and priorities in your resume.</p>
+        <p class="step-lead">Paste a job posting and the AI will mirror its keywords and priorities in your resume. Optional — skip this and we'll generate a strong general-purpose resume from your profile instead.</p>
 
         <div class="form-section">
           <div class="field-grid">
-            <input type="text" id="jdCompany" placeholder="Company name" class="form-input">
-            <input type="text" id="jdTitle" placeholder="Job title" class="form-input">
+            <input type="text" id="jdCompany" placeholder="Company name (optional)" class="form-input">
+            <input type="text" id="jdTitle" placeholder="Job title (optional)" class="form-input">
           </div>
           <input type="text" id="jdLocation" placeholder="Location (optional)" class="form-input">
         </div>
 
         <div class="form-section">
-          <label>Job description</label>
-          <textarea id="jdText" placeholder="Paste the full job description here..." class="form-input" rows="12"></textarea>
+          <label>Job description (optional)</label>
+          <textarea id="jdText" placeholder="Paste the full job description here — or leave blank for a general resume..." class="form-input" rows="12"></textarea>
         </div>
 
         <button id="analyzeBtn" class="btn btn-secondary">Analyze keywords (instant, no AI)</button>
@@ -394,7 +394,7 @@
       <!-- STEP 4: GENERATE -->
       <section id="step-generate" class="step-content">
         <h1>Generate &amp; download</h1>
-        <p class="step-lead">Pick a writing style and a visual design, then let your AI tailor the documents to this job.</p>
+        <p class="step-lead">Pick a writing style and a visual design, then let your AI generate the documents — tailored to the job you pasted, or a strong general version if you skipped that step.</p>
 
         <div class="form-section">
           <h2>Resume writing style</h2>

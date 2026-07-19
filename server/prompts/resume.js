@@ -22,6 +22,7 @@ function buildResumePrompt(resumeType, profile, jd) {
   } = profile;
 
   const { company, jobTitle, description } = jd;
+  const hasJob = !!(description && description.trim());
 
   // Build profile context
   const profileContext = `
@@ -66,13 +67,17 @@ ${certifications
   .join('\n')}
   `;
 
-  // Build job context
-  const jobContext = `
+  // Build job context — omitted entirely when no JD was provided, rather
+  // than passing through blank/placeholder fields that would push the model
+  // toward inventing a "target job" that doesn't exist.
+  const jobContext = hasJob
+    ? `
 TARGET JOB:
 Company: ${company}
 Job Title: ${jobTitle}
 Description: ${description}
-  `;
+  `
+    : '';
 
   // Resume type specific instructions
   let typeInstructions = '';
@@ -112,20 +117,31 @@ FORMAT: Classic Resume
       `;
   }
 
-  const fullPrompt = `You are an expert resume writer and ATS optimization specialist. Your task is to tailor a resume for a specific job application.
-
-${profileContext}
-
-${jobContext}
-
-${typeInstructions}
+  const taskInstructions = hasJob
+    ? `Your task is to tailor a resume for a specific job application.
 
 INSTRUCTIONS:
 1. Analyze the target job description and identify key skills, requirements, and keywords
 2. Tailor the candidate's experience, skills, and summary to match the job
 3. Rewrite bullet points to use ATS-friendly keywords from the JD
 4. Prioritize relevant experience and skills for this specific role
-5. Create a compelling professional summary (2-3 sentences) tailored to this position
+5. Create a compelling professional summary (2-3 sentences) tailored to this position`
+    : `Your task is to write a strong, general-purpose resume — no specific job
+was provided, so do not invent one or tailor toward any particular role.
+
+INSTRUCTIONS:
+1. Organize and polish the candidate's real experience, skills, and summary for broad readability and ATS-friendliness
+2. Rewrite bullet points with strong action verbs and quantifiable impact where the profile supports it
+3. Prioritize the candidate's strongest, most broadly relevant experience and skills
+4. Create a compelling, general professional summary (2-3 sentences) that represents the candidate as a whole`;
+
+  const fullPrompt = `You are an expert resume writer and ATS optimization specialist. ${taskInstructions}
+
+${profileContext}
+
+${jobContext}
+
+${typeInstructions}
 
 FACTUAL FIELDS — COPY EXACTLY, NEVER CHANGE OR INVENT:
 The candidate's employers, job titles, employment dates, institutions, degrees,
@@ -144,17 +160,17 @@ If a field is missing from the profile, leave it as an empty string. Do not
 fill in a plausible-sounding value.
 
 CONTENT YOU MAY REWRITE (this is the actual tailoring work):
-- Professional summary — rewrite freely to match the role
-- Achievement bullet wording — rephrase with ATS keywords from the JD, but
+- Professional summary — rewrite freely${hasJob ? ' to match the role' : ' into a strong general-purpose summary'}
+- Achievement bullet wording — rephrase with strong action verbs${hasJob ? ' and ATS keywords from the JD' : ''}, but
   every bullet must stay truthful to what the candidate actually did; do not
   invent new employers, dates, or metrics inside the bullet text either
 - Skill selection, ordering, and phrasing — pick and word the most relevant
-  ones for this JD
-- keyHighlights — your own synthesis of what makes this candidate fit
+  ones${hasJob ? ' for this JD' : ' overall'}
+- keyHighlights — your own synthesis of what makes this candidate ${hasJob ? 'fit' : 'stand out'}
 
 IMPORTANT: You MUST return ONLY a valid JSON object with this exact structure (no markdown, no code blocks):
 {
-  "tailoredSummary": "A 2-3 sentence professional summary tailored for this role",
+  "tailoredSummary": "A 2-3 sentence professional summary${hasJob ? ' tailored for this role' : ''}",
   "tailoredExperience": [
     {
       "company": "company name — copied exactly from the profile",

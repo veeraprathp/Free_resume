@@ -869,7 +869,6 @@ async function generateResume() {
   const settings = collectSettings();
 
   if (!profile.fullName) { alert('Please fill in your name in the Profile step'); return; }
-  if (!jd.description) { alert('Please paste a job description'); return; }
   if (!settings.apiKey || !settings.model) { alert('Please enter your provider, model, and API key in Settings'); return; }
 
   const btn = document.getElementById('generateBtn');
@@ -898,13 +897,21 @@ async function generateResume() {
     // class rules) and silently break the flex-column stacking, leaving
     // textareas at browser-default intrinsic width instead of full-width.
     document.getElementById('resumeEditor').style.display = 'flex';
-    document.getElementById('resumeAtsMatch').style.display = 'flex';
-    renderATSScore({
-      score: result.atsScore,
-      matchedKeywords: result.matchedKeywords || [],
-      missingKeywords: result.missingKeywords || [],
-      recommendations: result.recommendations || [],
-    });
+    // No JD was provided, so there's nothing to score an ATS match against —
+    // hide the card instead of showing a misleading "0% match".
+    const atsMatchEl = document.getElementById('resumeAtsMatch');
+    if (result.atsScore === null) {
+      atsMatchEl.style.display = 'none';
+      renderATSScore(null);
+    } else {
+      atsMatchEl.style.display = 'flex';
+      renderATSScore({
+        score: result.atsScore,
+        matchedKeywords: result.matchedKeywords || [],
+        missingKeywords: result.missingKeywords || [],
+        recommendations: result.recommendations || [],
+      });
+    }
 
     document.getElementById('editSummary').value = result.resumeContent.tailoredSummary || '';
     document.getElementById('editSkills').value = (result.resumeContent.tailoredSkills || []).join(', ');
