@@ -3,6 +3,7 @@
  * Mounts API routes for resume and cover letter generation
  */
 
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,8 +17,21 @@ const authRouter = require('./routes/auth');
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware — CSP tuned for the static frontend served below:
+// inline config script, Google Fonts, direct browser calls to OpenRouter's
+// public model list and Supabase auth.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'", 'https://openrouter.ai', 'https://jcemvvitzvveqbtvzttl.supabase.co'],
+    },
+  },
+}));
 
 // CORS — restrict via CORS_ORIGIN env var in production (comma-separated origins); allows all if unset
 app.use(cors(process.env.CORS_ORIGIN
@@ -62,7 +76,14 @@ app.use('/api/resumes', appTokenAuth, generateLimiter, requestTimeout(120000), r
 app.use('/api/coverletters', appTokenAuth, generateLimiter, requestTimeout(120000), coverlettersRouter);
 app.use('/api/auth', authRouter); // no appTokenAuth — unrelated to AI keys, just the login/signup cooldown
 
-// 404 handler
+// Static frontend (website/) — served from the same origin as the API
+const websiteDir = path.join(__dirname, '..', 'website');
+app.use(express.static(websiteDir));
+app.get(/^(?!\/api|\/health).*/, (req, res) => {
+  res.sendFile(path.join(websiteDir, 'index.html'));
+});
+
+// 404 handler (API routes only reach here — page requests are handled above)
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',

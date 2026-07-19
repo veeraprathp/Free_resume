@@ -506,9 +506,9 @@
   </div>
 
   <script>
-    // Deployment config: set this to your deployed API base URL (e.g. "https://api.yourdomain.com/api").
-    // Leave unset for local development (defaults to http://localhost:3000/api).
-    window.__APPLYJOB_API_URL__ = 'https://free-resume.onrender.com/api';
+    // The frontend is served by the same Express app as the API (see server/app.js),
+    // so a relative path always works — locally and in production, on any domain.
+    window.__APPLYJOB_API_URL__ = '/api';
   </script>
   <script src="supabase-client.js"></script>
   <script src="auth.js"></script>
