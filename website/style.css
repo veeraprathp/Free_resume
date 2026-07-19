@@ -388,6 +388,12 @@ html, body {
   line-height: 1.5;
 }
 
+.hint a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
