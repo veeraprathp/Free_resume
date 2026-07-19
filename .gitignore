@@ -29,3 +29,8 @@ applications/
 jd.txt
 **/jd.txt
 **/veera_prathap_*.pdf
+archive/about/
+archive/photo/
+
+# Puppeteer's Chromium download (see .puppeteerrc.cjs) — reinstalled by npm install, not committed
+.cache/
