@@ -1,0 +1,16 @@
+node_modules
+.git
+.gitignore
+.cache
+.env
+*.log
+Dockerfile
+.dockerignore
+
+# Not part of the deployed app
+archive
+ats-tool
+.claude
+
+# Docs, not needed at runtime
+*.md
