@@ -95,6 +95,10 @@ html, body {
   color: var(--ink);
 }
 
+.sidebar .logo {
+  cursor: pointer; /* doubles as a "back to homepage" link */
+}
+
 .logo-mark {
   color: var(--accent);
 }
@@ -806,6 +810,23 @@ select.form-input {
   background: var(--ink);
   border-color: var(--ink);
   color: #fff;
+}
+
+/* Full-screen viewing mode — the toolbar's tabs (flex:1) already push the
+   trailing buttons to the row's right edge, which becomes the screen's
+   top-right corner once the pane covers the full viewport. */
+.preview-sidebar.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100%;
+  min-width: 0;
+  height: 100vh;
+  border-right: none;
+}
+
+.preview-sidebar.fullscreen .preview-iframe {
+  min-height: 80vh;
 }
 
 /* Paper backdrop: the document floats like a real page */

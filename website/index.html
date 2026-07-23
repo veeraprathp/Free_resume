@@ -164,38 +164,6 @@
     </div>
   </div>
 
-  <!-- ===== AUTH GATE (required before reaching the Generate step) ===== -->
-  <div id="authGateView" class="welcome" style="display:none;">
-    <div class="welcome-inner">
-      <div class="welcome-logo"><span class="logo-mark">Apply</span>Job</div>
-      <h1 class="welcome-headline">One quick step —<br>save your account.</h1>
-      <p class="welcome-sub">Free, takes 10 seconds. Your AI key still never leaves your browser — this just keeps your generated resumes tied to your account.</p>
-
-      <div class="welcome-form">
-        <div id="gateLoginBox" class="gate-panel">
-          <label class="welcome-label" for="gateEmail">Email</label>
-          <input type="email" id="gateEmail" placeholder="jane@example.com" class="form-input">
-          <label class="welcome-label" for="gatePassword">Password</label>
-          <input type="password" id="gatePassword" placeholder="Password" class="form-input">
-          <button id="gateLoginBtn" class="btn btn-primary btn-hero">Log in &amp; continue →</button>
-          <div id="gateError" class="auth-error"></div>
-          <p class="auth-toggle-text">No account? <a href="#" id="gateToSignup">Sign up</a></p>
-        </div>
-        <div id="gateSignupBox" class="gate-panel" style="display:none;">
-          <label class="welcome-label" for="gateSignupName">Full name</label>
-          <input type="text" id="gateSignupName" placeholder="Jane Doe" class="form-input">
-          <label class="welcome-label" for="gateSignupEmail">Email</label>
-          <input type="email" id="gateSignupEmail" placeholder="jane@example.com" class="form-input">
-          <label class="welcome-label" for="gateSignupPassword">Password</label>
-          <input type="password" id="gateSignupPassword" placeholder="Password (min 6 chars)" class="form-input">
-          <button id="gateSignupBtn" class="btn btn-primary btn-hero">Create account &amp; continue →</button>
-          <div id="gateSignupError" class="auth-error"></div>
-          <p class="auth-toggle-text">Have an account? <a href="#" id="gateToLogin">Log in</a></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div id="app" class="app-container">
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar">
@@ -221,41 +189,6 @@
       </nav>
 
       <div class="sidebar-footer">
-        <!-- Account / cross-device sync (optional — never gates BYOK usage) -->
-        <div id="accountBox">
-          <div id="accountSignedOut">
-            <div class="api-status">
-              <div class="status-dot" id="authStatusDot"></div>
-              <span id="authStatusText">Not signed in (local only)</span>
-            </div>
-            <button class="btn btn-secondary btn-block" id="showAuthFormBtn">Sign in to sync</button>
-            <div id="authForms" style="display:none;">
-              <div id="loginFormBox">
-                <input type="email" id="authEmail" placeholder="Email" class="form-input auth-field">
-                <input type="password" id="authPassword" placeholder="Password" class="form-input auth-field">
-                <button class="btn btn-primary btn-block" id="authLoginBtn">Log In</button>
-                <div id="authError" class="auth-error"></div>
-                <p class="auth-toggle-text">No account? <a href="#" id="showSignupLink">Sign up</a></p>
-              </div>
-              <div id="signupFormBox" style="display:none;">
-                <input type="text" id="signupName" placeholder="Full Name" class="form-input auth-field">
-                <input type="email" id="signupEmail" placeholder="Email" class="form-input auth-field">
-                <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" class="form-input auth-field">
-                <button class="btn btn-primary btn-block" id="authSignupBtn">Create Account</button>
-                <div id="signupError" class="auth-error"></div>
-                <p class="auth-toggle-text">Have an account? <a href="#" id="showLoginLink">Log in</a></p>
-              </div>
-            </div>
-          </div>
-          <div id="accountSignedIn" style="display:none;">
-            <div class="api-status">
-              <div class="status-dot connected"></div>
-              <span id="authUserEmail"></span>
-            </div>
-            <button class="btn btn-secondary btn-block" id="authLogoutBtn">Sign Out</button>
-          </div>
-        </div>
-
         <div class="api-status">
           <div id="apiStatusIndicator" class="status-dot"></div>
           <span id="apiStatusText">AI not connected</span>
@@ -499,10 +432,16 @@
           <button class="preview-tab active" data-preview="resume">Resume</button>
           <button class="preview-tab" data-preview="coverletter">Cover letter</button>
         </div>
+        <button class="btn btn-secondary btn-small" id="previewExpandBtn" style="display:none;" title="View full screen">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m11 0h3a2 2 0 0 0 2-2v-3"/></svg>
+          View
+        </button>
         <button class="btn btn-secondary btn-small" id="previewEditBtn" style="display:none;">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
           Edit
         </button>
+        <button class="btn btn-primary btn-small" id="updateDetailsBtn" style="display:none;">Update your details</button>
+        <button class="btn btn-secondary btn-small" id="previewCloseBtn" style="display:none;" title="Exit full screen">✕</button>
       </div>
       <p class="preview-hint" id="previewEditHint" style="display:none;">Click any text on the page below and type to change it — your edits go straight into the PDF.</p>
       <div class="preview-sample-badge" id="previewSampleBadge" style="display:none;">Sample preview — click Generate to create yours</div>
@@ -518,8 +457,6 @@
     // so a relative path always works — locally and in production, on any domain.
     window.__APPLYJOB_API_URL__ = '/api';
   </script>
-  <script src="supabase-client.js"></script>
-  <script src="auth.js"></script>
   <script src="app-frontend.js"></script>
 </body>
 </html>

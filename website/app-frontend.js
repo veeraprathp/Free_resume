@@ -161,27 +161,12 @@ function updateNavCompletion() {
   });
 }
 
-// Reaching the Generate step is the one point in the flow that requires an
-// account (so generated documents can be tied to it) — every earlier step
-// works fully anonymously with just a BYOK key.
-// LOGIN TEMPORARILY DISABLED — commented out for now, not removed. To
-// restore the auth gate, swap the body back to the block below.
-function goToStepGated(idx) {
-  goToStep(idx);
-  // const stepName = CONFIG.STEPS[idx];
-  // if (stepName === 'generate') {
-  //   continueIfAuthed(() => goToStep(idx));
-  // } else {
-  //   goToStep(idx);
-  // }
-}
-
 function bindNav() {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const stepName = btn.dataset.step;
       const idx = CONFIG.STEPS.indexOf(stepName);
-      if (idx !== -1) goToStepGated(idx);
+      if (idx !== -1) goToStep(idx);
     });
   });
 
@@ -189,9 +174,13 @@ function bindNav() {
   document.querySelectorAll('.step-next, .step-back').forEach(btn => {
     btn.addEventListener('click', () => {
       const idx = CONFIG.STEPS.indexOf(btn.dataset.goto);
-      if (idx !== -1) goToStepGated(idx);
+      if (idx !== -1) goToStep(idx);
     });
   });
+
+  // Sidebar logo doubles as a "back to homepage" link — the only way back to
+  // the templates gallery once a user has entered the Profile/Job/Generate flow.
+  document.querySelector('.sidebar .logo')?.addEventListener('click', showWelcome);
 }
 
 // ===== DYNAMIC ENTRY LISTS (Experience / Education / Projects / Certifications) =====
@@ -448,189 +437,7 @@ function persistProfileAndSettings() {
   const profile = collectProfile();
   localStorage.setItem('profile', JSON.stringify(profile));
   localStorage.setItem('settings', JSON.stringify(collectSettings())); // settings/apiKey: local-only, never synced
-  saveProfileToSupabase(profile); // fire-and-forget; no-ops if not signed in
   updateNavCompletion();
-}
-
-// ===== CLOUD SYNC (profile only — NEVER settings/apiKey) =====
-// saveProfileToSupabase is the ONLY function allowed to write to resume_profiles.
-// Its signature only ever accepts collectProfile()'s output, never appState or
-// collectSettings() — the API key structurally cannot flow through this path.
-
-async function saveProfileToSupabase(profile) {
-  if (!window.ApplyJobAuth || !window.ApplyJobAuth.isConfigured()) return;
-  const user = await window.ApplyJobAuth.getUser();
-  if (!user) return; // not signed in -> local-only, nothing to sync
-  const client = window.ApplyJobAuth.getClient();
-  if (!client) return;
-  const { error } = await client.from('resume_profiles').upsert({
-    user_id: user.id,
-    data: profile,
-    updated_at: new Date().toISOString(),
-  });
-  if (error) console.error('[ApplyJob] Cloud profile sync failed:', error);
-}
-
-async function fetchRemoteProfile(userId) {
-  const client = window.ApplyJobAuth.getClient();
-  if (!client) return null;
-  const { data, error } = await client
-    .from('resume_profiles')
-    .select('data')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) { console.error('[ApplyJob] Fetch remote profile failed:', error); return null; }
-  return data ? data.data : null;
-}
-
-function renderAuthState(user) {
-  const signedOut = document.getElementById('accountSignedOut');
-  const signedIn = document.getElementById('accountSignedIn');
-  if (!signedOut || !signedIn) return;
-  if (user) {
-    signedOut.style.display = 'none';
-    signedIn.style.display = 'flex';
-    document.getElementById('authUserEmail').textContent = user.email || 'Signed in';
-  } else {
-    signedOut.style.display = 'flex';
-    signedIn.style.display = 'none';
-  }
-}
-
-// Tracks which account (if any) this tab last synced, so we can tell a genuine
-// mid-session account switch (sign out, then sign in as someone else, no
-// reload) apart from an ordinary page load. undefined = not checked yet.
-let lastSyncedUserId = undefined;
-
-async function syncProfileFromSupabaseIfSignedIn() {
-  if (!window.ApplyJobAuth || !window.ApplyJobAuth.isConfigured()) return;
-  const user = await window.ApplyJobAuth.getUser();
-  renderAuthState(user);
-
-  const currentUserId = user ? user.id : null;
-  const isAccountChange = lastSyncedUserId !== undefined && lastSyncedUserId !== currentUserId;
-  lastSyncedUserId = currentUserId;
-
-  if (!user) return;
-
-  const remoteProfile = await fetchRemoteProfile(user.id);
-  if (remoteProfile) {
-    populateProfile(remoteProfile); // Supabase is the source of truth once signed in
-    localStorage.setItem('profile', JSON.stringify(remoteProfile)); // refresh local cache
-  } else if (isAccountChange) {
-    // A different account just signed in mid-session and has no saved cloud
-    // profile yet — don't leave the previous account's data visible in the form.
-    populateProfile({});
-    localStorage.removeItem('profile');
-  }
-  // else: page just loaded, this account has no cloud profile yet — leave
-  // whatever localStorage already restored alone (it's this session's own data).
-}
-
-// ===== AUTH REQUEST COOLDOWN =====
-// Security measure: after any login/signup attempt, block that button for
-// this many seconds before it can be used again. The countdown/disable here
-// is just the visible UI — the actual limit is enforced server-side (see
-// checkAuthThrottle below) via POST /api/auth/throttle, so refreshing the
-// page can't reset it the way a purely client-side timer could.
-const AUTH_REQUEST_COOLDOWN_SECONDS = 30;
-
-function withAuthCooldown(button, action) {
-  if (!button) return;
-  const originalLabel = button.textContent;
-
-  button.addEventListener('click', async () => {
-    if (button.disabled) return;
-    button.disabled = true;
-    // Default cooldown; if the server rejects this attempt as too soon, it
-    // tells us exactly how many seconds are actually left and we use that
-    // instead, so the on-button countdown always matches real enforcement.
-    let remaining = AUTH_REQUEST_COOLDOWN_SECONDS;
-    try {
-      await action();
-    } catch (err) {
-      if (typeof err?.retryAfter === 'number') remaining = err.retryAfter;
-    } finally {
-      button.textContent = `Try again in ${remaining}s`;
-      const timer = setInterval(() => {
-        remaining -= 1;
-        if (remaining <= 0) {
-          clearInterval(timer);
-          button.disabled = false;
-          button.textContent = originalLabel;
-        } else {
-          button.textContent = `Try again in ${remaining}s`;
-        }
-      }, 1000);
-    }
-  });
-}
-
-// Calls the backend's per-(action,email) cooldown check before we ever touch
-// Supabase. Shows the server's message in errorEl and re-throws (with
-// `retryAfter` attached) so withAuthCooldown's countdown reflects it exactly.
-async function checkAuthThrottle(action, email, errorEl) {
-  try {
-    await callBackend('/auth/throttle', { action, email });
-  } catch (err) {
-    if (errorEl) errorEl.textContent = err.message;
-    throw err;
-  }
-}
-
-async function performSidebarLogin() {
-  const email = document.getElementById('authEmail')?.value || '';
-  const password = document.getElementById('authPassword')?.value || '';
-  const errorEl = document.getElementById('authError');
-  errorEl.textContent = '';
-  await checkAuthThrottle('login', email, errorEl);
-  const { error } = await window.ApplyJobAuth.signIn(email, password);
-  if (error) { errorEl.textContent = error.message; return; }
-  await syncProfileFromSupabaseIfSignedIn();
-}
-
-async function performSidebarSignup() {
-  const name = document.getElementById('signupName')?.value || '';
-  const email = document.getElementById('signupEmail')?.value || '';
-  const password = document.getElementById('signupPassword')?.value || '';
-  const errorEl = document.getElementById('signupError');
-  errorEl.textContent = '';
-  await checkAuthThrottle('signup', email, errorEl);
-  const { data, error } = await window.ApplyJobAuth.signUp(email, password, name);
-  if (error) { errorEl.textContent = error.message; return; }
-  if (!data?.session) {
-    errorEl.style.color = 'var(--text-secondary)';
-    errorEl.textContent = 'Check your email to confirm your account, then log in.';
-    return;
-  }
-  await syncProfileFromSupabaseIfSignedIn();
-}
-
-function bindAuthUI() {
-  document.getElementById('showAuthFormBtn')?.addEventListener('click', () => {
-    const forms = document.getElementById('authForms');
-    if (forms) forms.style.display = forms.style.display === 'none' ? 'block' : 'none';
-  });
-
-  document.getElementById('showSignupLink')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('loginFormBox').style.display = 'none';
-    document.getElementById('signupFormBox').style.display = 'block';
-  });
-
-  document.getElementById('showLoginLink')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('signupFormBox').style.display = 'none';
-    document.getElementById('loginFormBox').style.display = 'block';
-  });
-
-  withAuthCooldown(document.getElementById('authLoginBtn'), performSidebarLogin);
-  withAuthCooldown(document.getElementById('authSignupBtn'), performSidebarSignup);
-
-  document.getElementById('authLogoutBtn')?.addEventListener('click', async () => {
-    await window.ApplyJobAuth.signOut();
-    renderAuthState(null); // profile stays in the form/localStorage — sign-out never wipes data
-  });
 }
 
 function restoreProfileAndSettings() {
@@ -1080,6 +887,8 @@ function setPreview(kind, html) {
   if (hint) hint.style.display = 'none';
   const editBtn = document.getElementById('previewEditBtn');
   if (editBtn) editBtn.style.display = '';
+  const expandBtn = document.getElementById('previewExpandBtn');
+  if (expandBtn) expandBtn.style.display = '';
 
   const activeTab = document.querySelector('.preview-tab.active')?.dataset.preview || 'resume';
   if (activeTab === kind) {
@@ -1146,6 +955,29 @@ function isPreviewEditing() {
 function bindPreviewEditing() {
   document.getElementById('previewEditBtn')?.addEventListener('click', () => {
     setPreviewEditing(!isPreviewEditing());
+  });
+}
+
+// ===== FULL-SCREEN PREVIEW =====
+// "View" expands the preview pane over the whole viewport; Edit and
+// "Update your details" stay reachable in its top-right corner throughout.
+
+function setPreviewFullscreen(on) {
+  document.getElementById('previewSidebar')?.classList.toggle('fullscreen', on);
+  const expandBtn = document.getElementById('previewExpandBtn');
+  const updateBtn = document.getElementById('updateDetailsBtn');
+  const closeBtn = document.getElementById('previewCloseBtn');
+  if (expandBtn) expandBtn.style.display = on ? 'none' : '';
+  if (updateBtn) updateBtn.style.display = on ? '' : 'none';
+  if (closeBtn) closeBtn.style.display = on ? '' : 'none';
+}
+
+function bindPreviewFullscreen() {
+  document.getElementById('previewExpandBtn')?.addEventListener('click', () => setPreviewFullscreen(true));
+  document.getElementById('previewCloseBtn')?.addEventListener('click', () => setPreviewFullscreen(false));
+  document.getElementById('updateDetailsBtn')?.addEventListener('click', () => {
+    setPreviewFullscreen(false);
+    goToStep(CONFIG.STEPS.indexOf('profile'));
   });
 }
 
@@ -1564,7 +1396,6 @@ function bindAll() {
   document.getElementById('clTemplateId')?.addEventListener('change', () => {
     if (appState.generatedCoverLetter) previewCoverLetter();
   });
-  bindAuthUI();
 }
 
 // ===== WELCOME / LANDING FLOW =====
@@ -1579,6 +1410,14 @@ function dismissWelcome() {
   localStorage.setItem('seenWelcome', '1');
   document.getElementById('welcomeView').style.display = 'none';
   document.getElementById('app').style.display = '';
+}
+
+// Reverse of dismissWelcome — lets a user already in the Profile/Job/Generate
+// flow return to the templates gallery. Doesn't touch 'seenWelcome': the
+// welcome screen only auto-shows on first visit, this is a manual revisit.
+function showWelcome() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('welcomeView').style.display = 'flex';
 }
 
 function bindWelcome() {
@@ -1618,102 +1457,13 @@ function bindWelcome() {
   });
 }
 
-// ===== AUTH GATE (mandatory login/signup before reaching Generate) =====
-// Navigating to the Generate step funnels through here first; every earlier
-// step works anonymously. Supabase already persists the session in
-// localStorage, so once a user has signed in this only re-appears if they
-// explicitly sign out or clear storage.
-
-let pendingGateAction = null;
-
-function showAuthGate(action) {
-  pendingGateAction = action;
-  document.getElementById('welcomeView').style.display = 'none';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('authGateView').style.display = 'flex';
-  const errorEl = document.getElementById('gateError');
-  if (errorEl) errorEl.textContent = '';
-}
-
-function hideAuthGate() {
-  document.getElementById('authGateView').style.display = 'none';
-  document.getElementById('app').style.display = '';
-}
-
-function completeAuthGate() {
-  hideAuthGate();
-  const action = pendingGateAction;
-  pendingGateAction = null;
-  if (action) action();
-}
-
-// Runs `action` immediately if signed in (or if Supabase isn't configured, so
-// local dev without a Supabase project still works) — otherwise shows the
-// gate and defers `action` until login/signup succeeds.
-async function continueIfAuthed(action) {
-  if (window.ApplyJobAuth && window.ApplyJobAuth.isConfigured()) {
-    const user = await window.ApplyJobAuth.getUser();
-    if (!user) { showAuthGate(action); return; }
-  }
-  action();
-}
-
-function bindAuthGate() {
-  const loginBox = document.getElementById('gateLoginBox');
-  const signupBox = document.getElementById('gateSignupBox');
-
-  document.getElementById('gateToSignup')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    loginBox.style.display = 'none';
-    signupBox.style.display = 'flex'; // .gate-panel is a flex column — 'block' would break the label/input stacking
-  });
-
-  document.getElementById('gateToLogin')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    signupBox.style.display = 'none';
-    loginBox.style.display = 'flex';
-  });
-
-  withAuthCooldown(document.getElementById('gateLoginBtn'), async () => {
-    const email = document.getElementById('gateEmail')?.value || '';
-    const password = document.getElementById('gatePassword')?.value || '';
-    const errorEl = document.getElementById('gateError');
-    errorEl.textContent = '';
-    await checkAuthThrottle('login', email, errorEl);
-    const { error } = await window.ApplyJobAuth.signIn(email, password);
-    if (error) { errorEl.textContent = error.message; return; }
-    await syncProfileFromSupabaseIfSignedIn();
-    completeAuthGate();
-  });
-
-  withAuthCooldown(document.getElementById('gateSignupBtn'), async () => {
-    const name = document.getElementById('gateSignupName')?.value || '';
-    const email = document.getElementById('gateSignupEmail')?.value || '';
-    const password = document.getElementById('gateSignupPassword')?.value || '';
-    const errorEl = document.getElementById('gateSignupError');
-    errorEl.textContent = '';
-    await checkAuthThrottle('signup', email, errorEl);
-    const { data, error } = await window.ApplyJobAuth.signUp(email, password, name);
-    if (error) { errorEl.textContent = error.message; return; }
-    if (!data?.session) {
-      // Email confirmation is on for this Supabase project — no session yet,
-      // so there's nothing to continue into until they confirm and log in.
-      errorEl.style.color = 'var(--ink-soft)';
-      errorEl.textContent = 'Check your email to confirm your account, then log in.';
-      return;
-    }
-    await syncProfileFromSupabaseIfSignedIn();
-    completeAuthGate();
-  });
-}
-
 window.addEventListener('DOMContentLoaded', () => {
   bindAll();
   bindWelcome();
-  bindAuthGate();
   bindAiConnectModal();
   bindAiSettingsModal();
   bindPreviewEditing();
+  bindPreviewFullscreen();
   initPreviewResizer();
   toggleCustomBaseURLSection();
   restoreProfileAndSettings(); // fast local paint, works fully offline/anonymous
@@ -1734,16 +1484,5 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!settings.apiKey || !settings.model) {
       showAiConnectModal();
     }
-  }
-
-  if (window.ApplyJobAuth && window.ApplyJobAuth.isConfigured()) {
-    syncProfileFromSupabaseIfSignedIn(); // async — overwrites form if a session+row exists
-    window.ApplyJobAuth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') {
-        syncProfileFromSupabaseIfSignedIn();
-      } else if (event === 'SIGNED_OUT') {
-        renderAuthState(null); // keep whatever's already in the form/localStorage
-      }
-    });
   }
 });
