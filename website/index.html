@@ -189,9 +189,16 @@
     </div>
   </div>
 
+  <!-- Sidebar is a hidden-by-default overlay drawer (see .sidebar in style.css) —
+       this toggle is the only persistent way to open it. -->
+  <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Open menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+  <div id="sidebarBackdrop" class="sidebar-backdrop" style="display:none;"></div>
+
   <div id="app" class="app-container">
     <!-- ===== SIDEBAR ===== -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="appSidebar">
       <div class="logo"><span class="logo-mark">Apply</span>Job</div>
       <p class="logo-tagline">Your key. Your data. Your resume.</p>
 
@@ -339,12 +346,13 @@
         <h1>Generate &amp; download</h1>
         <p class="step-lead">Pick a writing style and a visual design, then let your AI generate the documents — tailored to the job you pasted, or a strong general version if you skipped that step.</p>
 
+        <div class="generate-columns">
         <div class="generate-phase" id="phaseChooseLook">
           <div class="phase-header">
             <span class="phase-number">1</span>
             <div>
               <h2 class="phase-title">Choose your look</h2>
-              <p class="phase-sub">Pick a style and visual design — the preview pane on the left updates live as you go.</p>
+              <p class="phase-sub">Pick a style and visual design — the preview pane on the right updates live as you go.</p>
             </div>
           </div>
 
@@ -458,6 +466,7 @@
             <div class="result-header"><h3>Your cover letter is ready</h3></div>
             <button id="downloadCLBtn" class="btn btn-primary">Download PDF</button>
           </div>
+        </div>
         </div>
         </div>
 

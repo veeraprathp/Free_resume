@@ -188,6 +188,7 @@ function bindNav() {
       const stepName = btn.dataset.step;
       const idx = CONFIG.STEPS.indexOf(stepName);
       if (idx !== -1) goToStep(idx);
+      closeSidebar();
     });
   });
 
@@ -201,7 +202,37 @@ function bindNav() {
 
   // Sidebar logo doubles as a "back to homepage" link — the only way back to
   // the templates gallery once a user has entered the Profile/Job/Generate flow.
-  document.querySelector('.sidebar .logo')?.addEventListener('click', showWelcome);
+  document.querySelector('.sidebar .logo')?.addEventListener('click', () => {
+    closeSidebar();
+    showWelcome();
+  });
+}
+
+// ===== SIDEBAR (hidden-by-default overlay drawer) =====
+
+function openSidebar() {
+  document.getElementById('appSidebar')?.classList.add('open');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (backdrop) backdrop.style.display = 'block';
+  document.getElementById('sidebarToggleBtn')?.setAttribute('aria-expanded', 'true');
+}
+
+function closeSidebar() {
+  document.getElementById('appSidebar')?.classList.remove('open');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (backdrop) backdrop.style.display = 'none';
+  document.getElementById('sidebarToggleBtn')?.setAttribute('aria-expanded', 'false');
+}
+
+function bindSidebarToggle() {
+  document.getElementById('sidebarToggleBtn')?.addEventListener('click', () => {
+    if (document.getElementById('appSidebar')?.classList.contains('open')) closeSidebar();
+    else openSidebar();
+  });
+  document.getElementById('sidebarBackdrop')?.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSidebar();
+  });
 }
 
 // ===== DYNAMIC ENTRY LISTS (Experience / Education / Projects / Certifications) =====
@@ -1252,9 +1283,9 @@ function initPreviewResizer() {
 
   document.addEventListener('mousemove', (e) => {
     if (!dragging) return;
-    // Preview pane is the leftmost column, so its width is just the cursor's
-    // distance from the left edge of the window.
-    const width = Math.min(Math.max(e.clientX, 300), Math.round(window.innerWidth * 0.6));
+    // Preview pane is the rightmost column, so its width is the cursor's
+    // distance from the right edge of the window.
+    const width = Math.min(Math.max(window.innerWidth - e.clientX, 300), Math.round(window.innerWidth * 0.6));
     container.style.setProperty('--preview-w', width + 'px');
   });
 
@@ -1841,6 +1872,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindAiConnectModal();
   bindAiSettingsModal();
   bindEmailGate();
+  bindSidebarToggle();
   bindPreviewEditing();
   bindPreviewFullscreen();
   initPreviewResizer();

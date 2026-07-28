@@ -63,16 +63,18 @@ html, body {
 }
 
 /* ===== APP LAYOUT ===== */
-/* Preview pane lives first in the DOM's visual order (order: -1 below) so it
-   renders on the left; track widths below stay in that same left-to-right
-   order: preview, nav, main content. */
+/* Two columns now: main content (left) and preview (right), in plain DOM
+   order — no more order:-1 trick, since the sidebar used to be the thing
+   sitting between them and is now an overlay outside the grid entirely. */
 .app-container {
   display: grid;
-  grid-template-columns: var(--preview-w, 380px) 300px 1fr;
+  grid-template-columns: 1fr var(--preview-w, 380px);
   min-height: 100vh;
 }
 
 /* ===== SIDEBAR ===== */
+/* Hidden-by-default overlay drawer — opened only via #sidebarToggleBtn, not
+   part of the grid flow, so it never takes up column space. */
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -81,10 +83,48 @@ html, body {
   padding: var(--space-lg) var(--space-md);
   gap: var(--space-md);
   overflow-y: auto;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   height: 100vh;
-  min-height: 0; /* grid items default to min-height:auto, which blocks overflow-y:auto from ever clipping content — the row would grow instead of this pane scrolling */
+  width: 300px;
+  z-index: 1001;
+  box-shadow: var(--shadow-pop);
+  transform: translateX(-100%);
+  transition: transform var(--transition-normal);
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-toggle-btn {
+  position: fixed;
+  top: var(--space-md);
+  left: var(--space-md);
+  z-index: 1002;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+}
+
+.sidebar-toggle-btn:hover {
+  background: var(--bg-inset);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.4);
+  z-index: 1000;
 }
 
 .logo {
@@ -387,13 +427,24 @@ html, body {
 .sub-label { margin-top: var(--space-sm); }
 
 /* ===== GENERATE STEP PHASES ===== */
-.generate-phase {
-  margin-bottom: var(--space-xl);
+/* Side by side: pick a look on the left, generate on the right (of the main
+   content column — the actual document preview lives further right still,
+   in its own top-level column). */
+.generate-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  align-items: start;
 }
 
-.generate-phase + .generate-phase {
-  padding-top: var(--space-lg);
-  border-top: 1px solid var(--border);
+.generate-phase {
+  margin-bottom: var(--space-xl);
+  min-width: 0; /* grid items default to min-width:auto, which lets long template names overflow the column instead of wrapping */
+}
+
+.generate-columns .generate-phase + .generate-phase {
+  padding-top: 0;
+  border-top: none;
 }
 
 .phase-header {
@@ -841,11 +892,10 @@ select.form-input {
 
 /* ===== PREVIEW SIDEBAR ===== */
 .preview-sidebar {
-  order: -1; /* render first (left) even though it's last in the DOM */
   display: flex;
   flex-direction: column;
   background: var(--bg-inset);
-  border-right: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   padding: var(--space-md);
   gap: var(--space-md);
   position: sticky;
@@ -856,10 +906,10 @@ select.form-input {
   min-width: 300px;
 }
 
-/* Drag handle on the pane's right edge — resize the preview */
+/* Drag handle on the pane's left edge (the boundary with main-content) — resize the preview */
 .preview-resizer {
   position: absolute;
-  right: 0;
+  left: 0;
   top: 0;
   bottom: 0;
   width: 6px;
@@ -981,19 +1031,18 @@ select.form-input {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1250px) {
-  .app-container { grid-template-columns: 260px 1fr; }
+/* The sidebar is a fixed-position overlay at every width (opened via
+   #sidebarToggleBtn) — it was the only thing needing width-based column
+   changes before, so there's just one breakpoint left now: stacking
+   main-content and the preview pane once they can't sit side by side. */
+@media (max-width: 1100px) {
+  .app-container { grid-template-columns: 1fr; }
 
-  /* Stack the preview below the content instead of hiding it — the Preview
-     buttons need somewhere to render on every screen size. Override the
-     desktop order:-1 so it stays last (below) rather than jumping above the
-     nav/form once there's no side-by-side column to put it in. */
   .preview-sidebar {
-    order: 1;
     grid-column: 1 / -1;
     position: static;
     height: auto;
-    border-right: none;
+    border-left: none;
     border-top: 1px solid var(--border);
   }
 
@@ -1001,18 +1050,16 @@ select.form-input {
   .preview-resizer { display: none; }
 
   .preview-iframe { min-height: 70vh; }
+
+  .generate-columns { grid-template-columns: 1fr; }
+
+  .generate-columns .generate-phase + .generate-phase {
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border);
+  }
 }
 
 @media (max-width: 900px) {
-  .app-container { grid-template-columns: 1fr; }
-
-  .sidebar {
-    position: static;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-
   .nav { flex-direction: column; }
 
   /* Everything stacks into one flowing column here, so main-content should no
