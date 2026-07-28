@@ -158,16 +158,34 @@
 
       <label class="welcome-label" for="quickAiProvider">Provider</label>
       <select id="quickAiProvider" class="form-input">
-        <option value="groq" selected>Groq (fast starter option)</option>
-        <option value="openrouter">OpenRouter (free and low-cost models available)</option>
+        <option value="groq" selected>Groq — free</option>
+        <option value="openrouter">OpenRouter — free and low-cost models</option>
       </select>
+      <p class="hint" id="quickProviderHint"></p>
 
       <label class="welcome-label" for="quickApiKey">API key</label>
-      <input type="password" id="quickApiKey" placeholder="Paste your key here" class="form-input">
+      <input type="password" id="quickApiKey" placeholder="Paste your key here — we'll detect Groq or OpenRouter automatically" class="form-input">
 
       <button id="quickConnectBtn" class="btn btn-primary btn-hero">Save key &amp; continue →</button>
       <button id="quickManualBtn" class="btn btn-secondary">Continue manually</button>
       <div id="quickConnectStatus" class="hint"></div>
+    </div>
+  </div>
+
+  <!-- ===== EMAIL GATE (shown once, before the first download) ===== -->
+  <div id="emailGateModal" class="modal-backdrop" style="display:none;">
+    <div class="modal-card">
+      <h2 class="modal-title">One quick thing</h2>
+      <p class="hint">Enter your email to unlock the download and save your resume link. No spam. You can unsubscribe anytime.</p>
+
+      <label class="welcome-label" for="gateEmailInput">Email</label>
+      <input type="email" id="gateEmailInput" placeholder="you@example.com" class="form-input">
+      <div id="gateEmailStatus"></div>
+
+      <div class="button-group">
+        <button id="gateEmailCancelBtn" class="btn btn-secondary">Cancel</button>
+        <button id="gateEmailSubmitBtn" class="btn btn-primary">Unlock download</button>
+      </div>
     </div>
   </div>
 
@@ -183,13 +201,8 @@
           <span class="nav-text"><strong>Your Profile</strong><small>Upload or fill in</small></span>
           <span class="nav-check">✓</span>
         </button>
-        <button data-step="job" class="nav-btn">
-          <span class="nav-num">2</span>
-          <span class="nav-text"><strong>The Job</strong><small>Paste the posting</small></span>
-          <span class="nav-check">✓</span>
-        </button>
         <button data-step="generate" class="nav-btn">
-          <span class="nav-num">3</span>
+          <span class="nav-num">2</span>
           <span class="nav-text"><strong>Generate</strong><small>Tailor &amp; download</small></span>
           <span class="nav-check">✓</span>
         </button>
@@ -261,7 +274,10 @@
               <input type="hidden" id="profilePhoto" value="">
               <button type="button" id="removePhotoBtn" class="btn btn-secondary btn-small" style="display:none;">Remove photo</button>
               <div id="photoStatus"></div>
-              <p id="photoAtsWarning" class="hint hint-warning" style="display:none;">This visual design doesn't include a photo — it'll be left out of the preview and PDF.</p>
+              <p id="photoAtsWarning" class="hint hint-warning" style="display:none;">
+                The currently selected visual design doesn't include a photo — it'll be left out of the preview and PDF.
+                <button type="button" id="switchToPhotoTemplateBtn" class="link-btn">Switch to a photo-friendly design</button>
+              </p>
             </div>
           </div>
         </div>
@@ -314,38 +330,11 @@
 
         <div class="step-nav">
           <span></span>
-          <button class="btn btn-primary step-next" data-goto="job">Continue to the Job →</button>
-        </div>
-      </section>
-
-      <!-- STEP 3: JOB DESCRIPTION -->
-      <section id="step-job" class="step-content">
-        <h1>The job you want</h1>
-        <p class="step-lead">Paste a job posting and the AI will mirror its keywords and priorities in your resume. Optional — skip this and we'll generate a strong general-purpose resume from your profile instead.</p>
-
-        <div class="form-section">
-          <div class="field-grid">
-            <input type="text" id="jdCompany" placeholder="Company name (optional)" class="form-input">
-            <input type="text" id="jdTitle" placeholder="Job title (optional)" class="form-input">
-          </div>
-          <input type="text" id="jdLocation" placeholder="Location (optional)" class="form-input">
-        </div>
-
-        <div class="form-section">
-          <label>Job description (optional)</label>
-          <textarea id="jdText" placeholder="Paste the full job description here — or leave blank for a general resume..." class="form-input" rows="12"></textarea>
-        </div>
-
-        <button id="analyzeBtn" class="btn btn-secondary">Analyze keywords (instant, no AI)</button>
-        <div id="keywordResults"></div>
-
-        <div class="step-nav">
-          <button class="btn btn-ghost step-back" data-goto="profile">← Back</button>
           <button class="btn btn-primary step-next" data-goto="generate">Continue to Generate →</button>
         </div>
       </section>
 
-      <!-- STEP 4: GENERATE -->
+      <!-- STEP 3: GENERATE -->
       <section id="step-generate" class="step-content">
         <h1>Generate &amp; download</h1>
         <p class="step-lead">Pick a writing style and a visual design, then let your AI generate the documents — tailored to the job you pasted, or a strong general version if you skipped that step.</p>
@@ -411,9 +400,22 @@
             <span class="phase-number">2</span>
             <div>
               <h2 class="phase-title">Generate</h2>
-              <p class="phase-sub">Let AI write the real content, tailored to the job you pasted.</p>
+              <p class="phase-sub">Let AI write the real content — general-purpose by default, or tailored if you add a job below (works before or after you first generate).</p>
             </div>
           </div>
+
+        <div class="form-section">
+          <h2>Optional: tailor to a job</h2>
+          <p class="hint">Paste a posting to mirror its keywords and priorities — leave blank for a general-purpose resume. Add or change this any time, even after you've already generated one, and generate again to re-tailor.</p>
+          <div class="field-grid">
+            <input type="text" id="jdCompany" placeholder="Company name (optional)" class="form-input">
+            <input type="text" id="jdTitle" placeholder="Job title (optional)" class="form-input">
+          </div>
+          <label class="sub-label">Job description (optional)</label>
+          <textarea id="jdText" placeholder="Paste the full job description here — or leave blank for a general resume..." class="form-input" rows="8"></textarea>
+          <button id="analyzeBtn" class="btn btn-secondary btn-small">Analyze keywords (instant, no AI)</button>
+          <div id="keywordResults"></div>
+        </div>
 
         <div class="form-section">
           <label>Anything specific to mention? (optional)</label>
@@ -460,7 +462,7 @@
         </div>
 
         <div class="step-nav">
-          <button class="btn btn-ghost step-back" data-goto="job">← Back</button>
+          <button class="btn btn-ghost step-back" data-goto="profile">← Back</button>
           <span></span>
         </div>
       </section>

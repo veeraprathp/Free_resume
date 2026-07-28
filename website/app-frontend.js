@@ -2,7 +2,7 @@ const CONFIG = {
   BACKEND_URL: window.__APPLYJOB_API_URL__ || 'http://localhost:3000/api',
   // AI connection now happens via the quick-connect modal (or the full
   // settings modal, opened from the sidebar) rather than a wizard step.
-  STEPS: ['profile', 'job', 'generate'],
+  STEPS: ['profile', 'generate'],
 };
 
 // Providers that run at a caller-supplied URL and therefore need the Base URL field
@@ -40,6 +40,19 @@ const PROVIDER_MODELS = {
 
 function isKnownDefaultModel(value) {
   return Object.values(PROVIDER_MODELS).some(m => m.default && m.default === value);
+}
+
+// Scoped to just the two free providers the quick-connect modal actually
+// offers — other providers' keys either lack a distinctive prefix (Mistral,
+// Together, Cohere) or are ambiguous with one another (DeepSeek/OpenAI both
+// use bare "sk-"), so guessing there would risk silently selecting the
+// wrong provider. Returning null just leaves the dropdown as the user set it.
+function detectProviderFromApiKey(rawKey) {
+  const key = (rawKey || '').trim();
+  if (!key) return null;
+  if (/^gsk_/.test(key)) return 'groq';
+  if (/^sk-or-v1-/.test(key)) return 'openrouter';
+  return null;
 }
 
 function applyModelSuggestions() {
@@ -162,7 +175,6 @@ function goToStep(stepIndex) {
 function updateNavCompletion() {
   const done = {
     profile: !!document.getElementById('fullName')?.value,
-    job: !!document.getElementById('jdText')?.value,
     generate: !!(appState.generatedResume || appState.generatedCoverLetter),
   };
   Object.entries(done).forEach(([step, isDone]) => {
@@ -512,6 +524,7 @@ async function handlePhotoFileSelect(event) {
 function bindPhotoUpload() {
   document.getElementById('profilePhotoInput')?.addEventListener('change', handlePhotoFileSelect);
   document.getElementById('removePhotoBtn')?.addEventListener('click', clearProfilePhoto);
+  document.getElementById('switchToPhotoTemplateBtn')?.addEventListener('click', switchToPhotoFriendlyTemplate);
 }
 
 function collectJobDescription() {
@@ -994,6 +1007,7 @@ async function previewResume() {
 }
 
 async function downloadResumePDF() {
+  if (!requireEmail(downloadResumePDF)) return;
   syncPreviewEdits(); // carry any in-progress preview edits into the PDF
   if (!window._previewHtml) { alert('Please preview the resume first'); return; }
   await downloadPDF(window._previewHtml, 'resume.pdf');
@@ -1069,6 +1083,7 @@ async function previewCoverLetter() {
 }
 
 async function downloadCoverLetterPDF() {
+  if (!requireEmail(downloadCoverLetterPDF)) return;
   syncPreviewEdits(); // carry any in-progress preview edits into the PDF
   if (!window._clPreviewHtml) { alert('Please preview the cover letter first'); return; }
   await downloadPDF(window._clPreviewHtml, 'cover-letter.pdf');
@@ -1345,6 +1360,19 @@ function updatePhotoAtsWarning() {
   warning.style.display = (hasPhoto && meta && meta.supports_photo === false) ? '' : 'none';
 }
 
+// Jumps to the first photo-capable template instead of just telling the user
+// their current pick doesn't support one — the warning alone was a dead end,
+// since the default-selected template (ATS-Friendly sorts first) never
+// supports photos, so most people who upload one see this immediately.
+function switchToPhotoFriendlyTemplate() {
+  const select = document.getElementById('resumeTemplateId');
+  if (!select) return;
+  const target = Object.values(resumeTemplateMeta).find(t => t.supports_photo === true);
+  if (!target) return;
+  select.value = target.id;
+  select.dispatchEvent(new Event('change'));
+}
+
 // Loads a placeholder resume/cover letter into the preview pane before the
 // user has generated anything real — no AI call, just the same sample data
 // the landing-page gallery uses. Never overwrites real generated output.
@@ -1562,6 +1590,17 @@ function bindAiConnectModal() {
     hideAiConnectModal();
   });
 
+  document.getElementById('quickApiKey')?.addEventListener('input', (e) => {
+    const detected = detectProviderFromApiKey(e.target.value);
+    const hint = document.getElementById('quickProviderHint');
+    if (!detected) { if (hint) hint.textContent = ''; return; }
+    const select = document.getElementById('quickAiProvider');
+    const option = select && [...select.options].find(o => o.value === detected);
+    if (!option) { if (hint) hint.textContent = ''; return; }
+    select.value = detected;
+    if (hint) hint.textContent = `Detected: ${option.textContent} — provider selected automatically.`;
+  });
+
   btn?.addEventListener('click', async () => {
     const provider = document.getElementById('quickAiProvider')?.value || 'openrouter';
     const apiKey = document.getElementById('quickApiKey')?.value.trim() || '';
@@ -1597,6 +1636,72 @@ function bindAiConnectModal() {
   });
 }
 
+// ===== EMAIL GATE (shown once, before the first download) =====
+// Same lazy-gate shape as requireAiSettings()/pendingAiAction above: check a
+// condition, and if it's not met, defer the caller's action until the user
+// completes the modal. The email itself is saved to localStorage (so a
+// returning visitor is never re-asked) and sent to POST /api/leads, which
+// appends it to a Google Sheet — best-effort; a backend/config issue there
+// never blocks the user's actual download.
+
+function hasEmail() {
+  return !!localStorage.getItem('userEmail');
+}
+
+let pendingEmailAction = null;
+
+function requireEmail(actionAfterEmail = null) {
+  if (hasEmail()) return true;
+  pendingEmailAction = typeof actionAfterEmail === 'function' ? actionAfterEmail : null;
+  showEmailGateModal();
+  return false;
+}
+
+function showEmailGateModal() {
+  const modal = document.getElementById('emailGateModal');
+  if (modal) modal.style.display = 'flex';
+  const status = document.getElementById('gateEmailStatus');
+  if (status) { status.textContent = ''; status.className = ''; }
+}
+
+function hideEmailGateModal() {
+  const modal = document.getElementById('emailGateModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function bindEmailGate() {
+  document.getElementById('gateEmailCancelBtn')?.addEventListener('click', () => {
+    pendingEmailAction = null; // cancel never runs the pending download
+    hideEmailGateModal();
+  });
+
+  document.getElementById('gateEmailSubmitBtn')?.addEventListener('click', async () => {
+    const input = document.getElementById('gateEmailInput');
+    const status = document.getElementById('gateEmailStatus');
+    const email = (input?.value || '').trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      if (status) { status.textContent = 'Enter a valid email address.'; status.className = 'error'; }
+      return;
+    }
+
+    localStorage.setItem('userEmail', email);
+
+    // Best-effort — a failure here (misconfigured sheet, network hiccup)
+    // never blocks the download the user actually came for.
+    try {
+      await callBackend('/leads', { email });
+    } catch (error) {
+      console.error('[Leads] Failed to save email:', error.message);
+    }
+
+    const next = pendingEmailAction;
+    pendingEmailAction = null;
+    hideEmailGateModal();
+    if (next) next();
+  });
+}
+
 // ===== FULL AI SETTINGS MODAL (all providers) =====
 // Opened from the sidebar's "Change AI provider" link — this is where a user
 // switches away from the quick-connect modal's OpenRouter/Groq-only choice to
@@ -1619,6 +1724,19 @@ function bindAiSettingsModal() {
     persistProfileAndSettings();
     refreshApiStatus();
     hideAiSettingsModal();
+  });
+
+  document.getElementById('apiKey')?.addEventListener('input', (e) => {
+    const detected = detectProviderFromApiKey(e.target.value);
+    if (!detected) return;
+    const select = document.getElementById('aiProvider');
+    const option = select && [...select.options].find(o => o.value === detected);
+    if (!option) return;
+    select.value = detected;
+    toggleCustomBaseURLSection();
+    applyModelSuggestions();
+    const status = document.getElementById('settingsStatus');
+    if (status) { status.textContent = `Detected: ${option.textContent} — provider selected automatically.`; status.className = ''; }
   });
 }
 
@@ -1722,6 +1840,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindWelcomeChoice();
   bindAiConnectModal();
   bindAiSettingsModal();
+  bindEmailGate();
   bindPreviewEditing();
   bindPreviewFullscreen();
   initPreviewResizer();

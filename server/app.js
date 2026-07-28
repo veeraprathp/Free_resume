@@ -14,6 +14,7 @@ const templatesRouter = require('./routes/templates');
 const resumesRouter = require('./routes/resumes');
 const coverlettersRouter = require('./routes/coverletters');
 const authRouter = require('./routes/auth');
+const leadsRouter = require('./routes/leads');
 
 const app = express();
 
@@ -81,6 +82,7 @@ app.use('/api/templates', templatesRouter);
 app.use('/api/resumes', appTokenAuth, generateLimiter, requestTimeout(120000), resumesRouter);
 app.use('/api/coverletters', appTokenAuth, generateLimiter, requestTimeout(120000), coverlettersRouter);
 app.use('/api/auth', authRouter); // no appTokenAuth — unrelated to AI keys, just the login/signup cooldown
+app.use('/api/leads', leadsRouter); // no appTokenAuth — public email-capture endpoint, covered by globalLimiter
 
 // Static frontend (website/) — served from the same origin as the API
 const websiteDir = path.join(__dirname, '..', 'website');

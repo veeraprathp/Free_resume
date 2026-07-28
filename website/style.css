@@ -777,7 +777,7 @@ select.form-input {
   color: var(--green);
 }
 
-#saveStatus.error, #settingsStatus.error, #parseStatus.error, #photoStatus.error {
+#saveStatus.error, #settingsStatus.error, #parseStatus.error, #photoStatus.error, #gateEmailStatus.error {
   padding: var(--space-md);
   margin-top: var(--space-md);
   background: var(--red-soft);
