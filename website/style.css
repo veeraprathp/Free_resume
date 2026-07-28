@@ -386,6 +386,50 @@ html, body {
 
 .sub-label { margin-top: var(--space-sm); }
 
+/* ===== GENERATE STEP PHASES ===== */
+.generate-phase {
+  margin-bottom: var(--space-xl);
+}
+
+.generate-phase + .generate-phase {
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border);
+}
+
+.phase-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.phase-number {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+}
+
+.phase-title {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+}
+
+.phase-sub {
+  font-size: var(--font-size-sm);
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
 .hint {
   font-size: var(--font-size-sm);
   color: var(--ink-soft);
@@ -402,6 +446,42 @@ html, body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-md);
+}
+
+/* ===== PROFILE PHOTO ===== */
+.photo-field {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.photo-preview-circle {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.photo-preview-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-field-controls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.hint-warning {
+  color: #92400e;
 }
 
 .divider {
@@ -697,7 +777,7 @@ select.form-input {
   color: var(--green);
 }
 
-#saveStatus.error, #settingsStatus.error, #parseStatus.error {
+#saveStatus.error, #settingsStatus.error, #parseStatus.error, #photoStatus.error {
   padding: var(--space-md);
   margin-top: var(--space-md);
   background: var(--red-soft);
@@ -1012,9 +1092,8 @@ select.form-input {
 }
 
 /* ===== QUICK AI CONNECT MODAL =====
-   Anchored to the top-right corner rather than centered — it appears
-   alongside the template gallery (still visible, dimmed, underneath) rather
-   than replacing the screen the way the full-page welcome/auth-gate views do. */
+   Opened only from AI actions; reads like a short guided setup instead of a
+   general settings page. */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1046,6 +1125,61 @@ select.form-input {
   font-size: var(--font-size-xl);
   font-weight: 700;
   letter-spacing: -0.3px;
+}
+
+.ai-key-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xs);
+  margin: var(--space-sm) 0;
+}
+
+.ai-key-steps div {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-sm) 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  text-align: center;
+}
+
+.ai-key-steps div:not(:last-child)::after {
+  content: ">";
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  font-weight: 700;
+  z-index: 1;
+}
+
+.ai-key-steps strong {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+}
+
+.ai-key-steps span {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--ink-soft);
+}
+
+.provider-link-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
 }
 
 @media (max-width: 700px) {

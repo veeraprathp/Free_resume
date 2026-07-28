@@ -8,6 +8,15 @@ const CONFIG = {
 // Providers that run at a caller-supplied URL and therefore need the Base URL field
 const BASE_URL_PROVIDERS = ['custom', 'ollama'];
 
+// ===== PROFILE PHOTO =====
+// Everything here is client-side only — a photo becomes a compressed base64
+// data URI stored in the hidden #profilePhoto input, which rides through
+// localStorage and request bodies exactly like every other profile field.
+const PHOTO_MAX_RAW_BYTES = 5 * 1024 * 1024; // reject raw uploads over this before ever reading them
+const PHOTO_ALLOWED_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const PHOTO_MAX_DIM = 400; // downscale target — plenty for a resume header/sidebar photo
+const PHOTO_JPEG_QUALITY = 0.8;
+
 // Users get an API key from their provider but rarely know model ID strings.
 // We pre-fill a fast, inexpensive default per provider and offer suggestions,
 // so pasting a key is all that's actually required. "Test connection" validates.
@@ -355,6 +364,7 @@ function collectProfile() {
     education,
     projects,
     certifications,
+    photo: document.getElementById('profilePhoto')?.value || '',
   };
 }
 
@@ -413,6 +423,95 @@ function populateProfile(profile) {
 
   clearEntryList('certsList');
   (profile.certifications || []).forEach(c => addCertEntry(c));
+
+  renderPhotoUI(profile.photo || '');
+}
+
+// Shared by populateProfile() (restoring from localStorage/parsed resume) and
+// setProfilePhoto()/clearProfilePhoto() (live user action) so the thumbnail/
+// remove-button visibility logic only lives in one place.
+function renderPhotoUI(dataUri) {
+  const thumb = document.getElementById('profilePhotoThumb');
+  const hidden = document.getElementById('profilePhoto');
+  const removeBtn = document.getElementById('removePhotoBtn');
+  if (hidden) hidden.value = dataUri || '';
+  if (thumb) {
+    thumb.src = dataUri || '';
+    thumb.style.display = dataUri ? '' : 'none';
+  }
+  if (removeBtn) removeBtn.style.display = dataUri ? '' : 'none';
+}
+
+function setProfilePhoto(dataUri) {
+  renderPhotoUI(dataUri);
+  updatePhotoAtsWarning();
+  // No auto-save here: this app only persists to localStorage on explicit
+  // action (Save profile button, or after resume-parse auto-fill) — the
+  // photo rides along with that same flow once it's part of collectProfile().
+}
+
+function clearProfilePhoto() {
+  renderPhotoUI('');
+  const input = document.getElementById('profilePhotoInput');
+  if (input) input.value = '';
+  updatePhotoAtsWarning();
+}
+
+// Reads the file, downscales it on an offscreen canvas (never upscales),
+// and re-encodes as JPEG — keeps localStorage and request-body payloads
+// small regardless of how large the original phone photo was.
+function compressImageToDataUri(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read that file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not read that image'));
+      img.onload = () => {
+        const scale = Math.min(1, PHOTO_MAX_DIM / Math.max(img.width, img.height));
+        const width = Math.round(img.width * scale);
+        const height = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', PHOTO_JPEG_QUALITY));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhotoFileSelect(event) {
+  const file = event.target.files?.[0];
+  const status = document.getElementById('photoStatus');
+  if (!file) return;
+
+  if (!PHOTO_ALLOWED_MIMES.has(file.type)) {
+    if (status) { status.textContent = 'Please upload a JPEG, PNG, or WebP image.'; status.className = 'error'; }
+    event.target.value = '';
+    return;
+  }
+  if (file.size > PHOTO_MAX_RAW_BYTES) {
+    if (status) { status.textContent = 'That image is too large — please use one under 5MB.'; status.className = 'error'; }
+    event.target.value = '';
+    return;
+  }
+
+  try {
+    const dataUri = await compressImageToDataUri(file);
+    if (status) { status.textContent = ''; status.className = ''; }
+    setProfilePhoto(dataUri);
+  } catch (error) {
+    if (status) { status.textContent = "Couldn't process that image — try a different file." ; status.className = 'error'; }
+    event.target.value = '';
+  }
+}
+
+function bindPhotoUpload() {
+  document.getElementById('profilePhotoInput')?.addEventListener('change', handlePhotoFileSelect);
+  document.getElementById('removePhotoBtn')?.addEventListener('click', clearProfilePhoto);
 }
 
 function collectJobDescription() {
@@ -433,10 +532,32 @@ function collectSettings() {
   };
 }
 
+function hasAiSettings() {
+  const settings = collectSettings();
+  return !!(settings.apiKey && settings.model);
+}
+
+let pendingAiAction = null;
+
+function requireAiSettings(actionAfterConnect = null) {
+  if (hasAiSettings()) return true;
+  pendingAiAction = typeof actionAfterConnect === 'function' ? actionAfterConnect : null;
+  showAiConnectModal();
+  setQuickConnectStatus('Connect a provider key to use AI, or continue manually without AI.', '');
+  return false;
+}
+
 function persistProfileAndSettings() {
   const profile = collectProfile();
-  localStorage.setItem('profile', JSON.stringify(profile));
-  localStorage.setItem('settings', JSON.stringify(collectSettings())); // settings/apiKey: local-only, never synced
+  try {
+    localStorage.setItem('profile', JSON.stringify(profile));
+    localStorage.setItem('settings', JSON.stringify(collectSettings())); // settings/apiKey: local-only, never synced
+  } catch (e) {
+    // A photo-bearing profile is far more likely to hit the browser's
+    // localStorage quota than the all-text profile this used to always be —
+    // surface that clearly instead of letting it fail silently mid-save.
+    alert('Profile is too large to save locally — try removing the photo or shortening some entries.');
+  }
   updateNavCompletion();
 }
 
@@ -550,8 +671,8 @@ async function parseResume() {
 
   const creds = currentParseCredentials();
   if (!creds.apiKey || !creds.model) {
-    document.getElementById('parseKeyMiniForm').style.display = 'grid';
-    if (status) { status.textContent = 'Enter a provider, model, and API key to parse your resume.'; status.className = 'error'; }
+    requireAiSettings(parseResume);
+    if (status) { status.textContent = 'Connect your AI key to parse this resume, or fill the profile manually below.'; status.className = 'error'; }
     return;
   }
 
@@ -676,7 +797,7 @@ async function generateResume() {
   const settings = collectSettings();
 
   if (!profile.fullName) { alert('Please fill in your name in the Profile step'); return; }
-  if (!settings.apiKey || !settings.model) { alert('Please enter your provider, model, and API key in Settings'); return; }
+  if (!settings.apiKey || !settings.model) { requireAiSettings(generateResume); return; }
 
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
@@ -779,7 +900,7 @@ async function previewResume() {
     const result = await callBackend('/resumes/preview', {
       resumeContent: appState.generatedResume,
       templateId,
-      includePhoto: false,
+      includePhoto: !!profile.photo,
       profile,
     });
 
@@ -802,8 +923,12 @@ async function generateCoverLetter() {
   const jd = collectJobDescription();
   const settings = collectSettings();
 
-  if (!profile.fullName || !jd.description || !settings.apiKey || !settings.model) {
-    alert('Please fill in Profile, Job Description, and API key/model in Settings');
+  if (!profile.fullName || !jd.description) {
+    alert('Please fill in Profile and Job Description first.');
+    return;
+  }
+  if (!settings.apiKey || !settings.model) {
+    requireAiSettings(generateCoverLetter);
     return;
   }
 
@@ -1074,6 +1199,11 @@ async function downloadPDF(html, filename) {
 
 // ===== TEMPLATE LOADING (visual templates) =====
 
+// Populated by loadTemplates() — keyed by template id, used by
+// updatePhotoAtsWarning() to check a template's supports_photo flag without
+// a extra round-trip.
+let resumeTemplateMeta = {};
+
 async function loadTemplates() {
   try {
     const resumeResp = await callBackend('/templates/resume');
@@ -1081,6 +1211,7 @@ async function loadTemplates() {
 
     const resumeSelect = document.getElementById('resumeTemplateId');
     if (resumeSelect) {
+      resumeResp.templates.forEach(t => { resumeTemplateMeta[t.id] = t; });
       // ATS-Friendly first — same recommended-default ordering as the gallery.
       [...resumeResp.templates].sort(byCategoryOrder).forEach(t => {
         const option = document.createElement('option');
@@ -1109,11 +1240,26 @@ async function loadTemplates() {
     // pane with sample output so it isn't just blank on first load.
     loadPreviewSample('resume');
     loadPreviewSample('coverletter');
-    resumeSelect?.addEventListener('change', () => loadPreviewSample('resume'));
+    resumeSelect?.addEventListener('change', () => { loadPreviewSample('resume'); updatePhotoAtsWarning(); });
     clSelect?.addEventListener('change', () => loadPreviewSample('coverletter'));
+    // Covers the case where a photo was already restored from localStorage
+    // (via populateProfile(), which runs before this resolves) — re-check
+    // now that resumeTemplateMeta is actually populated.
+    updatePhotoAtsWarning();
   } catch (error) {
     console.error('Failed to load templates:', error);
   }
+}
+
+// Shows/hides the "this template won't render a photo" note based on the
+// currently selected resume template's supports_photo metadata flag.
+function updatePhotoAtsWarning() {
+  const warning = document.getElementById('photoAtsWarning');
+  if (!warning) return;
+  const hasPhoto = !!document.getElementById('profilePhoto')?.value;
+  const templateId = document.getElementById('resumeTemplateId')?.value;
+  const meta = templateId ? resumeTemplateMeta[templateId] : null;
+  warning.style.display = (hasPhoto && meta && meta.supports_photo === false) ? '' : 'none';
 }
 
 // Loads a placeholder resume/cover letter into the preview pane before the
@@ -1236,16 +1382,24 @@ function renderGalleryCards(category) {
         <p class="gallery-persona">${escapeHtml(sample.persona.name)} — ${escapeHtml(sample.persona.label)}</p>
         <div class="button-group">
           <button type="button" class="btn btn-secondary btn-small view-full-sample-btn">View full resume</button>
-          <button type="button" class="btn btn-primary btn-small use-template-btn">Use this template</button>
+          <button type="button" class="btn btn-primary btn-small use-manual-btn">Edit manually</button>
+          <button type="button" class="btn btn-secondary btn-small use-ai-btn">Edit with AI</button>
         </div>
       </div>
     </div>
   `).join('') || '<p class="gallery-loading">No templates in this category yet.</p>';
 
-  gallery.querySelectorAll('.use-template-btn').forEach(btn => {
+  gallery.querySelectorAll('.use-manual-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const card = btn.closest('.template-gallery-card');
-      useTemplateFromGallery(card.dataset.templateId);
+      useTemplateFromGallery(card.dataset.templateId, 'manual');
+    });
+  });
+
+  gallery.querySelectorAll('.use-ai-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.template-gallery-card');
+      useTemplateFromGallery(card.dataset.templateId, 'ai');
     });
   });
 
@@ -1261,11 +1415,20 @@ function renderGalleryCards(category) {
   });
 }
 
-function useTemplateFromGallery(templateId) {
+function useTemplateFromGallery(templateId, mode = 'manual') {
   localStorage.setItem('preferredResumeTemplateId', templateId);
+
+  if (mode === 'ai' && !requireAiSettings(() => {
+    dismissWelcome();
+    updateNavCompletion();
+    goToStep(0);
+  })) {
+    return;
+  }
+
   dismissWelcome();
   updateNavCompletion();
-  goToStep(0); // Your Profile — AI is already connected via the quick-connect modal
+  goToStep(0); // Your Profile
 }
 
 function bindWelcomeChoice() {
@@ -1284,8 +1447,9 @@ function bindWelcomeChoice() {
   });
 }
 
-// ===== QUICK AI CONNECT (mandatory popup on first visit) =====
-// Shown the moment the template gallery loads if no AI key is saved yet.
+// ===== QUICK AI CONNECT (shown only when an AI action needs a key) =====
+// Gives users a guided path to connect a provider key without making AI setup
+// the first thing every visitor has to do.
 // Writes straight into the real #aiProvider/#aiModel/#apiKey fields so every
 // existing function (collectSettings, testApiKey, generateResume...) just
 // works — this is a fast-path into the same settings the full AI settings
@@ -1310,6 +1474,11 @@ function setQuickConnectStatus(text, kind) {
 
 function bindAiConnectModal() {
   const btn = document.getElementById('quickConnectBtn');
+  document.getElementById('quickManualBtn')?.addEventListener('click', () => {
+    pendingAiAction = null;
+    hideAiConnectModal();
+  });
+
   btn?.addEventListener('click', async () => {
     const provider = document.getElementById('quickAiProvider')?.value || 'openrouter';
     const apiKey = document.getElementById('quickApiKey')?.value.trim() || '';
@@ -1331,7 +1500,12 @@ function bindAiConnectModal() {
       persistProfileAndSettings();
       refreshApiStatus();
       setQuickConnectStatus('Connected!', 'success');
-      setTimeout(hideAiConnectModal, 600); // brief green confirmation before closing
+      const next = pendingAiAction;
+      pendingAiAction = null;
+      setTimeout(() => {
+        hideAiConnectModal();
+        if (next) next();
+      }, 600); // brief green confirmation before closing
     } catch (error) {
       setQuickConnectStatus(error.message || 'Could not verify that key — check it and try again.', 'error');
     } finally {
@@ -1372,6 +1546,7 @@ function bindAll() {
   bindAddEntryButtons();
   bindStyleCards();
   bindPreviewTabs();
+  bindPhotoUpload();
 
   document.getElementById('saveProfileBtn')?.addEventListener('click', saveProfile);
   document.getElementById('analyzeBtn')?.addEventListener('click', analyzeJD);
@@ -1449,10 +1624,10 @@ function bindWelcome() {
     goToStep(CONFIG.STEPS.indexOf('profile'));
     if (settings.apiKey && settings.model) {
       if (heroFile) parseResume(); // key already set: parse immediately, magic moment
+    } else if (heroFile) {
+      requireAiSettings(parseResume);
     } else {
-      // Defensive fallback — the mandatory quick-connect modal should already
-      // have required a key before this button was reachable, but just in case.
-      showAiSettingsModal();
+      // No AI setup needed for a blank/manual resume.
     }
   });
 }
@@ -1460,6 +1635,7 @@ function bindWelcome() {
 window.addEventListener('DOMContentLoaded', () => {
   bindAll();
   bindWelcome();
+  bindWelcomeChoice();
   bindAiConnectModal();
   bindAiSettingsModal();
   bindPreviewEditing();
@@ -1475,14 +1651,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if (shouldShowWelcome()) {
     document.getElementById('welcomeView').style.display = 'flex';
     document.getElementById('app').style.display = 'none';
-    bindWelcomeChoice();
     loadTemplateGallery(); // "Free templates" is the default view — load it immediately, not on click
-
-    // Templates are visible (dimmed) behind the modal — mandatory until a
-    // real, verified key is saved, but browsing samples first is the point.
-    const settings = collectSettings();
-    if (!settings.apiKey || !settings.model) {
-      showAiConnectModal();
-    }
   }
 });

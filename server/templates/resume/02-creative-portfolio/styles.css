@@ -27,6 +27,15 @@ body {
   padding: 36px 26px;
 }
 
+.sidebar-name .photo {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 16px;
+  border: 3px solid rgba(255,255,255,0.5);
+}
+
 .sidebar-name h1 {
   font-family: 'Playfair Display', serif;
   font-size: 20pt;
