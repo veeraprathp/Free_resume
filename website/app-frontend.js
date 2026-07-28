@@ -791,6 +791,44 @@ function renderATSScore(result) {
 
 // ===== GENERATE / PREVIEW / DOWNLOAD: RESUME =====
 
+// Shared tail for both the AI-generated and manually-built resume paths —
+// same result shape ({ resumeContent, atsScore, matchedKeywords,
+// missingKeywords, recommendations }) either way, so everything from here
+// on (reveal the editor, populate fields, preview) doesn't care which path
+// produced it.
+async function applyGeneratedResume(result) {
+  appState.generatedResume = result.resumeContent;
+  appState.atsScore = result.atsScore;
+  updateNavCompletion();
+
+  // .result-card / .ats-card are `display: flex` in CSS — an inline
+  // 'block' here would override the stylesheet (inline styles win over
+  // class rules) and silently break the flex-column stacking, leaving
+  // textareas at browser-default intrinsic width instead of full-width.
+  document.getElementById('resumeEditor').style.display = 'flex';
+  // No JD was provided, so there's nothing to score an ATS match against —
+  // hide the card instead of showing a misleading "0% match".
+  const atsMatchEl = document.getElementById('resumeAtsMatch');
+  if (result.atsScore === null) {
+    atsMatchEl.style.display = 'none';
+    renderATSScore(null);
+  } else {
+    atsMatchEl.style.display = 'flex';
+    renderATSScore({
+      score: result.atsScore,
+      matchedKeywords: result.matchedKeywords || [],
+      missingKeywords: result.missingKeywords || [],
+      recommendations: result.recommendations || [],
+    });
+  }
+
+  document.getElementById('editSummary').value = result.resumeContent.tailoredSummary || '';
+  document.getElementById('editSkills').value = (result.resumeContent.tailoredSkills || []).join(', ');
+
+  switchPreviewTab('resume');
+  await previewResume();
+}
+
 async function generateResume() {
   const profile = collectProfile();
   const jd = collectJobDescription();
@@ -816,41 +854,86 @@ async function generateResume() {
       resumeType: appState.resumeStyle,
     });
 
-    appState.generatedResume = result.resumeContent;
-    appState.atsScore = result.atsScore;
-    updateNavCompletion();
-
-    // .result-card / .ats-card are `display: flex` in CSS — an inline
-    // 'block' here would override the stylesheet (inline styles win over
-    // class rules) and silently break the flex-column stacking, leaving
-    // textareas at browser-default intrinsic width instead of full-width.
-    document.getElementById('resumeEditor').style.display = 'flex';
-    // No JD was provided, so there's nothing to score an ATS match against —
-    // hide the card instead of showing a misleading "0% match".
-    const atsMatchEl = document.getElementById('resumeAtsMatch');
-    if (result.atsScore === null) {
-      atsMatchEl.style.display = 'none';
-      renderATSScore(null);
-    } else {
-      atsMatchEl.style.display = 'flex';
-      renderATSScore({
-        score: result.atsScore,
-        matchedKeywords: result.matchedKeywords || [],
-        missingKeywords: result.missingKeywords || [],
-        recommendations: result.recommendations || [],
-      });
-    }
-
-    document.getElementById('editSummary').value = result.resumeContent.tailoredSummary || '';
-    document.getElementById('editSkills').value = (result.resumeContent.tailoredSkills || []).join(', ');
-
-    switchPreviewTab('resume');
-    await previewResume();
+    await applyGeneratedResume(result);
   } catch (error) {
     alert('Resume generation failed: ' + error.message);
   } finally {
     btn.disabled = false;
     setSpinner(false);
+  }
+}
+
+// ===== MANUAL (NO-AI) RESUME BUILD =====
+// Every "tailored" field the AI would produce already exists verbatim in
+// the user's profile -- rewording bullets/summary is the AI's actual value
+// add, not a requirement to produce a valid resume at all. This maps
+// profile data directly into the same resumeContent shape the AI path
+// produces, so everything downstream (preview, edit fields, PDF) treats it
+// identically.
+function buildManualResumeContent(profile) {
+  const tailoredExperience = (profile.experience || []).map(exp => ({
+    company: exp.company || '',
+    title: exp.title || '',
+    duration: [exp.startDate, exp.endDate].filter(Boolean).join(' - '),
+    achievements: exp.highlights || [],
+  }));
+
+  const tailoredEducation = (profile.education || []).map(edu => ({
+    degree: edu.degree || '',
+    field: edu.field || '',
+    institution: edu.institution || '',
+    year: edu.year || '',
+  }));
+
+  const tailoredCertifications = (profile.certifications || []).map(cert => ({
+    name: cert.name || '',
+    date: cert.date || '',
+  }));
+
+  const tailoredSkills = String(profile.skills || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+
+  return {
+    tailoredSummary: profile.summary || '',
+    tailoredExperience,
+    tailoredSkills,
+    tailoredEducation,
+    tailoredCertifications,
+  };
+}
+
+async function buildManualResume() {
+  const profile = collectProfile();
+  const jd = collectJobDescription();
+
+  if (!profile.fullName) { alert('Please fill in your name in the Profile step'); return; }
+
+  const btn = document.getElementById('buildManualBtn');
+  btn.disabled = true;
+
+  try {
+    const resumeContent = buildManualResumeContent(profile);
+
+    let result = { resumeContent, atsScore: null, matchedKeywords: [], missingKeywords: [], recommendations: [] };
+    if (jd.description) {
+      // Free, no-AI keyword match — same endpoint recheckResumeATSScore() uses.
+      // Note: this endpoint returns { score, ... } (not { atsScore, ... }) —
+      // remap it to the shape applyGeneratedResume()/the /resumes route use.
+      const atsResult = await callBackend('/resumes/ats-score', { resumeContent, jobDescription: jd.description });
+      result = {
+        resumeContent,
+        atsScore: atsResult.score,
+        matchedKeywords: atsResult.matchedKeywords || [],
+        missingKeywords: atsResult.missingKeywords || [],
+        recommendations: atsResult.recommendations || [],
+      };
+    }
+
+    await applyGeneratedResume(result);
+  } catch (error) {
+    alert('Resume build failed: ' + error.message);
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1552,6 +1635,7 @@ function bindAll() {
   document.getElementById('analyzeBtn')?.addEventListener('click', analyzeJD);
   document.getElementById('previewBtn')?.addEventListener('click', previewResume);
   document.getElementById('generateBtn')?.addEventListener('click', generateResume);
+  document.getElementById('buildManualBtn')?.addEventListener('click', buildManualResume);
   document.getElementById('recheckAtsBtn')?.addEventListener('click', recheckResumeATSScore);
   document.getElementById('downloadResumeBtn')?.addEventListener('click', downloadResumePDF);
   document.getElementById('previewCLBtn')?.addEventListener('click', previewCoverLetter);
